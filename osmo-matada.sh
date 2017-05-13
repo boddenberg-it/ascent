@@ -5,9 +5,9 @@ help() {
 }
 
 sanity() {
-
 	echo
 	echo -e "${YELLOW}[SANITY_CHECK] are all devices connected? ${NC}"
+
 	err_codes=0
 	adb devices | grep "$(serial_of $td_0)"
 	err_codes=$((err_codes+$?))
@@ -21,9 +21,8 @@ sanity() {
 		exit 1
 	else
 		echo -e "${GREEN}[INFO] sanity check successful ${NC}"
+		echo
 	fi
-
-	echo
 }
 
 # test wrappers
@@ -101,9 +100,7 @@ do_call() {
 
 		echo -e "${YELLOW}	[INFO] ${GREEN}$1${YELLOW} ends call ${NC}"
 		adb -s "$(serial_of $1)" shell  input keyevent "$KEYCODE_ENDCALL"
-		sleep 3 # Nexus 5 takes ages
-		echo "trying to unlock"
-		unlock_screen "$1"
+		# unlock_screen "$1" check whether it is really necessary... seems falky
 	fi
 
 	go_to_homescreen
@@ -122,22 +119,6 @@ go_to_homescreen() {
 	adb -s "$(serial_of $td_1)" shell input keyevent "$KEYCODE_HOME"
 }
 
-unlock_screen() {
-	screen="$(adb -s $(serial_of $1) shell dumpsys display | grep deviceWidth \
-		| awk -F"deviceWidth=" '{print $2}' | head -n 1)"
-
-	width="$(echo $screen | cut -d ',' -f1)"
-	height="$(echo $screen | cut -d '=' -f2 | cut -d '}' -f1)"
-
-	x=$((width/2))
-	y1=$((height-20))
-	y2=$((height/2))
-
-	adb -s "$(serial_of $1)" shell input keyevent "$KEYCODE_POWER"
-	sleep 1
-	adb -s "$(serial_of $1)" shell input swipe "$x" "$y1" "$x" "$y2"
-}
-
 # a bit OOP'ish to not care about whether serial or number has to be passed
 number_of() {
 	echo $(echo $1 | cut -d "$DELIMITER" -f2)
@@ -150,7 +131,7 @@ serial_of() {
 # https://developer.android.com/reference/android/view/KeyEvent.html
 KEYCODE_HOME=3
 KEYCODE_CALL=5
-KEYCODE_ENDCALL=6 # locks screen at the same time!
+KEYCODE_ENDCALL=6
 KEYCODE_DPAD_RIGHT=22
 KEYCODE_POWER=26
 KEYCODE_ENTER=66
