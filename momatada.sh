@@ -9,9 +9,9 @@ sanity() {
 	echo -e "${YELLOW}[SANITY_CHECK] are all devices connected? ${NC}"
 
 	err_codes=0
-	adb devices | grep "$(serial_of $td_0)"
+	adb devices | grep "$(serial_of "$d0")"
 	err_codes=$((err_codes+$?))
-	adb devices | grep "$(serial_of $td_1)"
+	adb devices | grep "$(serial_of "$d1")"
 	err_codes=$((err_codes+$?))
 
 	if [ "$err_codes" -gt 0 ]; then
@@ -25,19 +25,10 @@ sanity() {
 	fi
 }
 
-# device wrappers
-d0() {
-	echo "$td_0"
-}
-
-d1() {
-	echo "$td_1"
-}
-
 #  test wrapper
 2g() {
-	sms
-	call
+	sms ''
+	call ''
 }
 
 3g() {
@@ -46,18 +37,26 @@ d1() {
 }
 
 sms() {
-	send_sms "$td_0" "$td_1"
-	send_sms "$td_1" "$td_0"
+	if [ $# -eq 2 ]; then
+		send_sms "$1" "$2"
+	else
+		send_sms "$d0" "$d1"
+		send_sms "$d1" "$d0"
+	fi
 }
 
 data() {
-	ping "$td_0" "8.8.8.8"
-	ping "$td_1" "8.8.8.8"
+		ping "$d0" "8.8.8.8"
+		ping "$d1" "8.8.8.8"
 }
 
 call() {
-	do_call "$td_0" "$td_1"
-	do_call "$td_1" "$td_0"
+	if [ $# -eq 2 ]; then
+		do_call "$1" "$2"
+	else
+		do_call "$d0" "$d1"
+		do_call "$d1" "$d0"
+	fi
 }
 
 # actual tests
@@ -74,14 +73,14 @@ send_sms() {
 	go_to_homescreen
 	echo -e "$YELLOW[TEST-SMS] ${GREEN}$1${YELLOW} sends SMS to ${GREEN}$2${YELLOW} ${NC}"
 
-	adb -s "$(serial_of $1)" shell am start -a android.intent.action.SENDTO \
-		-d sms:"$(number_of $2)" --es sms_body "test_intent" --ez exit_on_sent true
+	adb -s "$(serial_of "$1")" shell am start -a android.intent.action.SENDTO \
+		-d sms:"$(number_of "$2")" --es sms_body "test_intent" --ez exit_on_sent true
 	sleep 0.3
-  adb -s "$(serial_of $1)" shell input text "test_input"
+  adb -s "$(serial_of "$1")" shell input text "test_input"
 	sleep 0.2
-	adb -s "$(serial_of $1)" shell input keyevent "$KEYCODE_DPAD_RIGHT"
+	adb -s "$(serial_of "$1")" shell input keyevent "$KEYCODE_DPAD_RIGHT"
 	sleep 0.2
-	adb -s "$(serial_of $1)" shell input keyevent "$KEYCODE_ENTER"
+	adb -s "$(serial_of "$1")" shell input keyevent "$KEYCODE_ENTER"
 
 	go_to_homescreen
 	echo
@@ -92,8 +91,8 @@ do_call() {
 	go_to_homescreen
 
 	echo -e "${YELLOW}[TEST-CALL] ${GREEN}$1${YELLOW} calls ${GREEN}$2${YELLOW} ${NC}"
-	adb -s "$(serial_of $1)" shell am start -a android.intent.action.CALL \
-                -d tel:"$(number_of $2)"
+	adb -s "$(serial_of "$1")" shell am start -a android.intent.action.CALL \
+                -d tel:"$(number_of "$2")"
 
 	echo -e "${YELLOW}	${BLUE}[INPUT]${YELLOW} does it ring? (no|ENTER)${NC}"
 	read does_it_ring
@@ -102,13 +101,13 @@ do_call() {
 		echo -e "${RED} 	[ERROR] call could not be established! ${NC}"
 	else
 		echo -e "${YELLOW}	[INFO] ${GREEN}$2${YELLOW} accepts call${NC}"
-		adb -s "$(serial_of $2)" shell input keyevent "$KEYCODE_CALL"
+		adb -s "$(serial_of "$2")" shell input keyevent "$KEYCODE_CALL"
 
 		echo -e "${YELLOW}	${BLUE}[INPUT]${YELLOW} enough of talking? ${NC}"
-		read  enough_of_talking
+		read
 
 		echo -e "${YELLOW}	[INFO] ${GREEN}$1${YELLOW} ends call ${NC}"
-		adb -s "$(serial_of $1)" shell  input keyevent "$KEYCODE_ENDCALL"
+		adb -s "$(serial_of "$1")" shell  input keyevent "$KEYCODE_ENDCALL"
 		# unlock_screen "$1" check whether it is really necessary... seems falky
 	fi
 
@@ -118,23 +117,23 @@ do_call() {
 
 ping() {
 	echo -e "${YELLOW}[TEST-DATA] ${GREEN}$1${YELLOW} tries to ping ${GREEN}$2${YELLOW} ${NC}"
-	adb -s $(serial_of $1) shell ping -c 3 "$2"
+	adb -s "$(serial_of "$1")" shell ping -c 3 "$2"
 	echo
 }
 
 # adb "flow" helpers
 go_to_homescreen() {
-	adb -s "$(serial_of $td_0)" shell input keyevent "$KEYCODE_HOME"
-	adb -s "$(serial_of $td_1)" shell input keyevent "$KEYCODE_HOME"
+	adb -s "$(serial_of "$d0")" shell input keyevent "$KEYCODE_HOME"
+	adb -s "$(serial_of "$d1")" shell input keyevent "$KEYCODE_HOME"
 }
 
 # a bit OOP'ish to not care about whether serial or number has to be passed
 number_of() {
-	echo $(echo $1 | cut -d "$DELIMITER" -f2)
+	echo "$1" | cut -d "$DELIMITER" -f2
 }
 
 serial_of() {
-	echo $(echo $1 | cut -d "$DELIMITER" -f1)
+	echo "$1" | cut -d "$DELIMITER" -f1
 }
 
 # https://developer.android.com/reference/android/view/KeyEvent.html
@@ -142,7 +141,6 @@ KEYCODE_HOME=3
 KEYCODE_CALL=5
 KEYCODE_ENDCALL=6
 KEYCODE_DPAD_RIGHT=22
-KEYCODE_POWER=26
 KEYCODE_ENTER=66
 
 # colours
@@ -157,8 +155,8 @@ YELLOW='\033[1;33m'
 DELIMITER="="
 
 # the two android devices for testing
-td_0="$(head -n 1 $(pwd)/config)"
-td_1="$(tail -n 1 $(pwd)/config)"
+d0="$(head -n 1 "$(pwd)"/config)"
+d1="$(tail -n 1 "$(pwd)"/config)"
 
 if [ $# -gt 0 ]; then # invokation with args
 	sanity
@@ -168,5 +166,6 @@ if [ $# -gt 0 ]; then # invokation with args
 	done
 else
 	help
+	# sanity + device wrappers in case of sourcing
 	sanity
 fi
