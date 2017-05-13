@@ -1,12 +1,17 @@
 #!/bin/bash
 
 help() {
-	echo "foo"
+	echo -e "${YELLOW}#######################################################"
+	echo -e "#" ${b}A${bo}ndroid Semiautomated CEllular Network Testing
+	echo -e "#"
+	echo -e "#"
+	echo -e "#"
+	echo -e "#######################################################${NC}"
 }
 
 sanity() {
 	echo
-	echo -e "${YELLOW}[SANITY_CHECK] are all devices connected? ${NC}"
+	echo -e "${YELLOW}[SANITY_CHECK] are both devices connected?${NC}"
 
 	err_codes=0
 	adb devices | grep "$(serial_of "$d0")"
@@ -16,19 +21,19 @@ sanity() {
 
 	if [ "$err_codes" -gt 0 ]; then
 		echo
-		echo -e "${RED}[ERROR] not all devices are not connected!!! ${NC}"
+		echo -e "${RED}[ERROR] not all devices are not connected!!!${NC}"
 		echo
-		exit 1
+		return 1
 	else
-		echo -e "${GREEN}[INFO] sanity check successful ${NC}"
+		echo -e "${GREEN}[INFO] sanity check successful${NC}"
 		echo
 	fi
 }
 
 #  test wrapper
 2g() {
-	sms ''
-	call ''
+	sms
+	call
 }
 
 3g() {
@@ -45,11 +50,6 @@ sms() {
 	fi
 }
 
-data() {
-		ping "$d0" "8.8.8.8"
-		ping "$d1" "8.8.8.8"
-}
-
 call() {
 	if [ $# -eq 2 ]; then
 		do_call "$1" "$2"
@@ -59,9 +59,13 @@ call() {
 	fi
 }
 
+data() {
+		ping "$d0" "8.8.8.8"
+		ping "$d1" "8.8.8.8"
+}
+
 # actual tests
 send_sms() {
-
 	if [ $# -ne 2 ]; then
 		echo -e "${RED}[ERROR] You need to pass 2 arguments to send_sms()"
 		echo
@@ -75,7 +79,8 @@ send_sms() {
 
 	adb -s "$(serial_of "$1")" shell am start -a android.intent.action.SENDTO \
 		-d sms:"$(number_of "$2")" --es sms_body "test_intent" --ez exit_on_sent true
-	sleep 0.3
+
+	sleep 0.2
   adb -s "$(serial_of "$1")" shell input text "test_input"
 	sleep 0.2
 	adb -s "$(serial_of "$1")" shell input keyevent "$KEYCODE_DPAD_RIGHT"
@@ -87,10 +92,9 @@ send_sms() {
 }
 
 do_call() {
-
 	go_to_homescreen
-
 	echo -e "${YELLOW}[TEST-CALL] ${GREEN}$1${YELLOW} calls ${GREEN}$2${YELLOW} ${NC}"
+
 	adb -s "$(serial_of "$1")" shell am start -a android.intent.action.CALL \
                 -d tel:"$(number_of "$2")"
 
@@ -108,7 +112,6 @@ do_call() {
 
 		echo -e "${YELLOW}	[INFO] ${GREEN}$1${YELLOW} ends call ${NC}"
 		adb -s "$(serial_of "$1")" shell  input keyevent "$KEYCODE_ENDCALL"
-		# unlock_screen "$1" check whether it is really necessary... seems falky
 	fi
 
 	go_to_homescreen
@@ -118,6 +121,7 @@ do_call() {
 ping() {
 	echo -e "${YELLOW}[TEST-DATA] ${GREEN}$1${YELLOW} tries to ping ${GREEN}$2${YELLOW} ${NC}"
 	adb -s "$(serial_of "$1")" shell ping -c 3 "$2"
+	# TODO: check whether "operation permitted" of s3, can be caught and then 'adb shell su -c ping'
 	echo
 }
 
@@ -149,16 +153,19 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 BLUE='\033[0;35m'
 YELLOW='\033[1;33m'
+# style
+b=`tput bold`  # bold
+bo=`tput sgr0` # bold off
 
 # only one char is allowed in fact of using cut.
 # please allign your config file accordingly.
 DELIMITER="="
 
-# the two android devices for testing
+# the two android devices used for testing
 d0="$(head -n 1 "$(pwd)"/config)"
 d1="$(tail -n 1 "$(pwd)"/config)"
 
-if [ $# -gt 0 ]; then # invokation with args
+if [ $# -gt 0 ]; then
 	sanity
 	for var in "$@"; do
   	$var
@@ -166,6 +173,5 @@ if [ $# -gt 0 ]; then # invokation with args
 	done
 else
 	help
-	# sanity + device wrappers in case of sourcing
 	sanity
 fi
