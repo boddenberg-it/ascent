@@ -1,12 +1,44 @@
 #!/bin/bash
 
 help() {
-	echo -e "${Y}#######################################################"
-	echo -e "#" ${b}A${bo}ndroid Semiautomated CEllular Network Testing
-	echo -e "#"
-	echo -e "#"
-	echo -e "#"
-	echo -e "#######################################################${NC}"
+	echo -e "${Y}#################################################################"
+	echo -e "#                                                               #"
+	echo -e "#   ${B}~${G}:${B}~${Y}  A${R}ndroid ${Y}S${R}emiautomated ${Y}CE${R}llular ${Y}N${R}etwork ${Y}T${R}esting${Y}  ${B}~${G}:${B}~${Y}    #"
+	echo -e "#                                                               #"
+	echo -e "#  Ascent shall help testing a cellular network with 2 Android  #"
+	echo -e "#  devices, without the need to interact with them physically.  #"
+	echo -e "#  It provides a CLI to call, send SMS and verify data UP/DL.   #"
+	echo -e "#  Although \"tests\" still have to be manual verified.           #"
+	echo -e "#                                                               #"
+	echo -e "#  There are ${R}two${Y} ways of using ascent.sh:                       #"
+	echo -e "#                                                               #"
+	echo -e "#       ${R}1st)${Y} ./ascent.sh ${G}\$arg${Y}   (ivokation with ${G}argument${Y})       #"
+	echo -e "#       ${R}2nd)${Y} source ascent.sh   (${B}interactive mode${Y})              #"
+	echo -e "#                                                               #"
+	echo -e "#  ${R}1st)${Y} When ascent.sh is invoked, one can pass ONLY one of     #"
+	echo -e "#       the following arguments a.k.a. tests suites/cases:      #"
+	echo -e "#                                                               #"
+	echo -e "#           cases:  ${G}call${Y}, ${G}sms${Y}, ${G}data${Y}                             #"
+	echo -e "#           suites: ${G}2g${Y}, ${G}3g${Y}                                      #"
+	echo -e "#                                                               #"
+	echo -e "#       All test cases will be executed on both test devices,   #"
+	echo -e "#       i.e. Alice sends SMS to Bob and vice versa.             #"
+	echo -e "#                                                               #"
+	echo -e "#  ${R}2nd)${Y} When ascent.sh is sourced, one can use invokations      # "
+	echo -e "#       described in ${R}1st${Y} as well. Additionally one can use      #"
+	echo -e "#       test short cuts, where devices have to be specified:    #"
+	echo -e "#                                                               #"
+	echo -e "#           ${B}sms \$d0 \$d1${Y}                                         #"
+	echo -e "#           ${B}call \$d1 \$d0${Y}                                        #"
+	echo -e "#           ${B}ping \$d1 ${G}<IP|URL>${Y}                                   #"
+	echo -e "#                                                               #"
+  echo -e "#  But first, you need to create a \"config\" file, within the    #"
+	echo -e "#  directory from which ascent is invoked/sourced as follows:   #"
+	echo -e "#                                                               #"
+	echo -e "#  ${R}<d0_android_serial>${Y}=${R}<d0_phone_number>${Y}=${R}<d0_name>${Y}              #"
+	echo -e "#  ${R}<d1_android_serial>${Y}=${R}<d1_phone_number>${Y}=${R}<d1_name>${Y}              #"
+	echo -e "#                                                               #"
+	echo -e "#################################################################${NC}"
 }
 
 sanity() {
@@ -21,7 +53,7 @@ sanity() {
 
 	if [ "$err_codes" -gt 0 ]; then
 		echo
-		echo -e "${R}[ERROR] not all devices are not connected!!!${NC}"
+		echo -e "${R}[ERROR] not both devices are connected!${NC}"
 		echo
 		return 1
 	else
@@ -86,7 +118,6 @@ send_sms() {
 	adb -s "$(serial_of "$1")" shell input keyevent "$KEYCODE_DPAD_RIGHT"
 	sleep 0.2
 	adb -s "$(serial_of "$1")" shell input keyevent "$KEYCODE_ENTER"
-
 	go_to_homescreen
 	echo
 }
@@ -113,7 +144,6 @@ do_call() {
 		echo -e "${Y}	[INFO] ${G}$1${Y} ends call ${NC}"
 		adb -s "$(serial_of "$1")" shell  input keyevent "$KEYCODE_ENDCALL"
 	fi
-
 	go_to_homescreen
 	echo
 }
