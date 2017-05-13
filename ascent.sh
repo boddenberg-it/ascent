@@ -5,10 +5,10 @@ help() {
 	echo -e "#                                                               #"
 	echo -e "#   ${B}~${G}:${B}~${Y}  A${R}ndroid ${Y}S${R}emiautomated ${Y}CE${R}llular ${Y}N${R}etwork ${Y}T${R}esting${Y}  ${B}~${G}:${B}~${Y}    #"
 	echo -e "#                                                               #"
-	echo -e "#  Ascent shall help testing a cellular network with 2 Android  #"
-	echo -e "#  devices, without the need to interact with them physically.  #"
-	echo -e "#  It provides a CLI to call, send SMS and verify data UP/DL.   #"
-	echo -e "#  Although \"tests\" still have to be manual verified.           #"
+	echo -e "#  Ascent shall help testing cellular networks with 2 Android   #"
+	echo -e "#  devices by only ovserving them - no physical interaction.    #"
+	echo -e "#  It provides an adb-based CLI to call, send SMS and verify    #"
+	echo -e "#  data. Although \"tests\" still have to be manual verified.     #"
 	echo -e "#                                                               #"
 	echo -e "#  There are ${R}two${Y} ways of using ascent.sh:                       #"
 	echo -e "#                                                               #"
@@ -178,19 +178,26 @@ KEYCODE_DPAD_RIGHT=22
 KEYCODE_ENTER=66
 
 # colours
-NC='\033[0m'
-R='\033[0;31m'
-G='\033[0;32m'
-B='\033[0;35m'
-Y='\033[1;33m'
+NC="\033[0m"
+R="\033[0;31m"
+G="\033[0;32m"
+B="\033[0;35m"
+Y="\033[1;33m"
 
-# only one char is allowed in fact of using cut.
-# please allign your config file accordingly.
+# only one char is allowed in fact of using cut, please allign your config file accordingly.
 DELIMITER="="
 
 # the two android devices used for testing
-d0="$(head -n 1 "$(pwd)"/config)"
-d1="$(tail -n 1 "$(pwd)"/config)"
+if [ ! -f "$(pwd)/config" ]; then
+	help
+	echo
+	echo -e "${R}[ERROR] no config file found, please provide one!${NC}"
+	echo
+	return 1
+else
+	d0="$(head -n 1 "$(pwd)"/config)"
+	d1="$(tail -n 1 "$(pwd)"/config)"
+fi
 
 if [ $# -gt 0 ]; then
 	sanity
