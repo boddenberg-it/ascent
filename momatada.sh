@@ -25,7 +25,7 @@ sanity() {
 	fi
 }
 
-# test wrappers
+#  wrappers
 2g() {
 	sms
 	call
@@ -63,7 +63,7 @@ send_sms() {
 	fi
 
 	go_to_homescreen
-	echo -e "$YELLOW[TEST] ${GREEN}$1${YELLOW} sends SMS to ${GREEN}$2${YELLOW} ${NC}"
+	echo -e "$YELLOW[TEST-SMS] ${GREEN}$1${YELLOW} sends SMS to ${GREEN}$2${YELLOW} ${NC}"
 
 	adb -s "$(serial_of $1)" shell am start -a android.intent.action.SENDTO \
 		-d sms:"$(number_of $2)" --es sms_body "test_intent" --ez exit_on_sent true
@@ -82,7 +82,7 @@ do_call() {
 
 	go_to_homescreen
 
-	echo -e "${YELLOW}[TEST] ${GREEN}$1${YELLOW} calls ${GREEN}$2${YELLOW} ${NC}"
+	echo -e "${YELLOW}[TEST-CALL] ${GREEN}$1${YELLOW} calls ${GREEN}$2${YELLOW} ${NC}"
 	adb -s "$(serial_of $1)" shell am start -a android.intent.action.CALL \
                 -d tel:"$(number_of $2)"
 
@@ -108,7 +108,7 @@ do_call() {
 }
 
 ping() {
-	echo -e "${YELLOW}[TEST] ${GREEN}$1${YELLOW} tries to ping ${GREEN}$2${YELLOW} ${NC}"
+	echo -e "${YELLOW}[TEST-DATA] ${GREEN}$1${YELLOW} tries to ping ${GREEN}$2${YELLOW} ${NC}"
 	adb -s $(serial_of $1) shell ping -c 3 "$2"
 	echo
 }
