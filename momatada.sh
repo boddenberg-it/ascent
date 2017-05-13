@@ -25,7 +25,16 @@ sanity() {
 	fi
 }
 
-#  wrappers
+# device wrappers
+d0() {
+	echo "$td_0"
+}
+
+d1() {
+	echo "$td_1"
+}
+
+#  test wrapper
 2g() {
 	sms
 	call
