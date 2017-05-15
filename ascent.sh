@@ -96,6 +96,15 @@ data() {
 		ping "$d1" "8.8.8.8"
 }
 
+# interactive helpers
+reset() {
+	go_to_homescreen
+}
+
+adb0() {
+	adb -s "$(serial_of $d0)" $@
+}
+
 # actual tests
 send_sms() {
 	if [ $# -ne 2 ]; then
