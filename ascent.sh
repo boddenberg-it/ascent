@@ -105,6 +105,10 @@ adb0() {
 	adb -s "$(serial_of $d0)" $@
 }
 
+adb1() {
+	adb -s "$(serial_of $d1)" $@
+}
+
 # actual tests
 send_sms() {
 	if [ $# -ne 2 ]; then
