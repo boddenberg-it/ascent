@@ -8,14 +8,14 @@ help() {
 	echo -e "#  Ascent shall help testing cellular networks with 2 Android   #"
 	echo -e "#  devices by only ovserving them - no physical interaction.    #"
 	echo -e "#  It provides an adb-based CLI to call, send SMS and verify    #"
-	echo -e "#  data. Although \"tests\" still have to be manual verified.     #"
+	echo -e "#  data. Although \"tests\" still have to be manually verified.   #"
 	echo -e "#                                                               #"
 	echo -e "#  There are ${R}two${Y} ways of using ascent.sh:                       #"
 	echo -e "#                                                               #"
 	echo -e "#       ${R}1st)${Y} ./ascent.sh ${G}\$arg${Y}   (ivokation with ${G}argument${Y})       #"
 	echo -e "#       ${R}2nd)${Y} source ascent.sh   (${B}interactive mode${Y})              #"
 	echo -e "#                                                               #"
-	echo -e "#  ${R}1st)${Y} When ascent.sh is invoked, one can pass several         #"
+	echo -e "#  ${R}1st)${Y} When ascent.sh is invoked, one can pass multiple        #"
 	echo -e "#       of following arguments a.k.a. tests suites/cases:       #"
 	echo -e "#                                                               #"
 	echo -e "#           cases:  ${G}call${Y}, ${G}sms${Y}, ${G}data${Y}                             #"
@@ -31,8 +31,8 @@ help() {
 	echo -e "#           ${B}sms \$d0 \$d1${Y}                                         #"
 	echo -e "#           ${B}call \$d1 \$d0${Y}                                        #"
 	echo -e "#           ${B}ping \$d1 ${G}<IP|URL>${Y}                                   #"
-	echo -e "#                                                               #"
-  echo -e "#  But first, you need to create a \"config\" file, within the    #"
+	echo -e "#                 mention the adb, reset and unlock $d0                                              #"
+	echo -e "#  But first, you need to create a \"config\" file, within the    #"
 	echo -e "#  directory from which ascent is invoked/sourced as follows:   #"
 	echo -e "#                                                               #"
 	echo -e "#  ${R}<d0_android_serial>${Y}=${R}<d0_phone_number>${Y}=${R}<d0_name>${Y}              #"
@@ -99,6 +99,11 @@ data() {
 # interactive helpers
 reset() {
 	go_to_homescreen
+}
+
+unlock() {
+	$(serial_of $1)
+	# TODO: finish
 }
 
 adb0() {
@@ -215,7 +220,7 @@ fi
 if [ $# -gt 0 ]; then
 	sanity
 	for var in "$@"; do
-  	$var
+  		$var
 		if [ $? -gt 0 ]; then help; fi
 	done
 else
