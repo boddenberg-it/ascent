@@ -102,8 +102,19 @@ reset() {
 }
 
 unlock() {
-	$(serial_of $1)
-	# TODO: finish
+	screen="$(adb -s $(serial_of $1) shell dumpsys display | grep deviceWidth \
+		| awk -F"deviceWidth=" '{print $2}' | head -n 1)"
+
+	width="$(echo $screen | cut -d ',' -f1)"
+	height="$(echo $screen | cut -d '=' -f2 | cut -d '}' -f1)"
+
+	x=$((width/2))
+	y1=$((height-20))
+	y2=$((height/2))
+
+	adb -s "$(serial_of $1)" shell input keyevent "$KEYCODE_POWER"
+	sleep 1
+	adb -s "$(serial_of $1)" shell input swipe "$x" "$y1" "$x" "$y2"
 }
 
 adb0() {
