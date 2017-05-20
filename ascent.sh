@@ -1,6 +1,6 @@
 #!/bin/bash
 
-help() {
+print_help() {
 	echo -e "${Y}#################################################################"
 	echo -e "#                                                               #"
 	echo -e "#   ${B}~${G}:${B}~${Y}  A${R}ndroid ${Y}S${R}emiautomated ${Y}CE${R}llular ${Y}N${R}etwork ${Y}T${R}esting${Y}  ${B}~${G}:${B}~${Y}    #"
@@ -48,9 +48,20 @@ help() {
 }
 
 sanity() {
-	echo
-	echo -e "${Y}[SANITY_CHECK] are both devices connected?${NC}"
 
+	echo
+	echo -e "${Y}[SANITY_CHECK] can config be found?${NC}"
+	if [ ! -f "$(pwd)/config" ]; then
+		echo -e "${R}[ERROR] no config file found, please provide one in CWD!${NC}"
+		print_help
+		return 1
+	else
+		d0="$(head -n 1 "$(pwd)"/config)"
+		d1="$(tail -n 1 "$(pwd)"/config)"
+		echo -e "${G}[INFO] config successfully parsed ($(pwd)/config)${NC}"
+	fi
+
+	echo -e "${Y}[SANITY_CHECK] are both devices connected?${NC}"
 	err_codes=0
 	adb devices | grep "$(serial_of "$d0")"
 	err_codes=$((err_codes+$?))
@@ -58,12 +69,11 @@ sanity() {
 	err_codes=$((err_codes+$?))
 
 	if [ "$err_codes" -gt 0 ]; then
-		echo
 		echo -e "${R}[ERROR] not both devices are connected!${NC}"
 		echo
 		return 1
 	else
-		echo -e "${G}[INFO] sanity check successful${NC}"
+		echo -e "${G}[INFO] adb connections successfully verified.${NC}"
 		echo
 	fi
 }
@@ -102,9 +112,35 @@ data() {
 		ping "$d1" "8.8.8.8"
 }
 
-# interactive helpers (debugging)
+ping() {
+	echo -e "${Y}[TEST-DATA] ${G}$1${Y} tries to ping ${G}$2${Y} ${NC}"
+	adb -s "$(serial_of "$1")" shell ping -c 3 "$2"
+}
+
+# interactive print_helpers (debugging)
+d0() {
+	echo $d0
+}
+
+d1() {
+	echo $d1
+}
+
+adb0() {
+	adb -s "$(serial_of $d0)" $@
+}
+
+adb1() {
+	adb -s "$(serial_of $d1)" $@
+}
+
 reset() {
 	go_to_homescreen
+}
+
+go_to_homescreen() {
+	adb -s "$(serial_of "$d0")" shell input keyevent "$KEYCODE_HOME"
+	adb -s "$(serial_of "$d1")" shell input keyevent "$KEYCODE_HOME"
 }
 
 # unlock() expects that there is no password or pattern to unlock the phone.
@@ -124,22 +160,6 @@ unlock() {
 	adb -s "$(serial_of $1)" shell input keyevent "$KEYCODE_POWER"
 	sleep 1
 	adb -s "$(serial_of $1)" shell input swipe "$x" "$y1" "$x" "$y2"
-}
-
-adb0() {
-	adb -s "$(serial_of $d0)" $@
-}
-
-adb1() {
-	adb -s "$(serial_of $d1)" $@
-}
-
-d0() {
-	echo $d0
-}
-
-d1() {
-	echo $d1
 }
 
 # actual tests
@@ -194,18 +214,7 @@ do_call() {
 	echo
 }
 
-ping() {
-	echo -e "${Y}[TEST-DATA] ${G}$1${Y} tries to ping ${G}$2${Y} ${NC}"
-	adb -s "$(serial_of "$1")" shell ping -c 3 "$2"
-	# TODO: check whether "operation permitted" of s3, can be caught and then 'adb shell su -c ping'
-	echo
-}
 
-# adb "flow" helpers
-go_to_homescreen() {
-	adb -s "$(serial_of "$d0")" shell input keyevent "$KEYCODE_HOME"
-	adb -s "$(serial_of "$d1")" shell input keyevent "$KEYCODE_HOME"
-}
 
 # a bit OOP'ish to not care about whether serial or number has to be passed
 number_of() {
@@ -230,28 +239,31 @@ G="\033[0;32m"
 B="\033[0;35m"
 Y="\033[1;33m"
 
-# only one char is allowed in fact of using cut, please allign your config file accordingly.
+# only one character is allowed in fact of using cut,
+# please allign your config file accordingly.
 DELIMITER="="
 
 # the two android devices used for testing
-if [ ! -f "$(pwd)/config" ]; then
-	help
-	echo
-	echo -e "${R}[ERROR] no config file found, please provide one!${NC}"
-	echo
-	return 1
-else
-	d0="$(head -n 1 "$(pwd)"/config)"
-	d1="$(tail -n 1 "$(pwd)"/config)"
-fi
+
 
 if [ $# -gt 0 ]; then
+	# invoking script
 	sanity
-	for var in "$@"; do
-  		$var
-		if [ $? -gt 0 ]; then help; fi
-	done
+	if [ $? -eq 0 ]; then
+		for var in "$@"; do
+  			$var
+			if [ $? -gt 0 ]; then print_help; fi
+		done
+	fi
 else
-	help
+	# sourcing script (interactive mode)
+	print_help
 	sanity
+	echo -e "${Y}[INFO] sourcing $(dirname $0)/$(basename $0)${NC}"
+	source "$(dirname $0)/$(basename $0)"
+	# if $? -gt 0]; then
+
+	# else
+	#      source script $(dirname foo blakeks)
+	# fi
 fi
