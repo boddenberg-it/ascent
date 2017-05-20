@@ -3,49 +3,90 @@
 print_help() {
 	echo -e "${Y}#################################################################"
 	echo -e "#                                                               #"
-	echo -e "#   ${B}~${G}:${B}~${Y}  A${R}ndroid ${Y}S${R}emiautomated ${Y}CE${R}llular ${Y}N${R}etwork ${Y}T${R}esting${Y}  ${B}~${G}:${B}~${Y}    #"
+	echo -e "#   ${B}~${G}:${B}~${R}  A${GRAY}ndroid ${R}S${GRAY}emiautomated ${R}CE${GRAY}llular ${R}N${GRAY}etwork ${R}T${GRAY}esting${Y}  ${B}~${G}:${B}~${Y}    #"
 	echo -e "#                                                               #"
 	echo -e "#  Ascent shall help testing cellular networks with 2 Android   #"
 	echo -e "#  devices by only ovserving them - no physical interaction.    #"
 	echo -e "#  It provides an adb-based CLI to call, send SMS and verify    #"
 	echo -e "#  data. Although \"tests\" still have to be manually verified.   #"
 	echo -e "#                                                               #"
+	echo -e "#  author:  André Boddenberg (ascent@boddenberg.it)             #"                                                          #"
+	echo -e "#  version: $ASCENT_VERSION                                                 #"
+	echo -e "#                                                               #"
 	echo -e "#  There are ${R}two${Y} ways of using ascent.sh:                       #"
 	echo -e "#                                                               #"
-	echo -e "#       ${R}1st)${Y} ./ascent.sh ${G}\$arg${Y}   (ivokation with ${G}argument${Y})       #"
-	echo -e "#       ${R}2nd)${Y} source ascent.sh   (${B}interactive mode${Y})              #"
+	echo -e "#       ${R}1st)${Y} ${GRAY}./ascent.sh ${G}arg(s)${Y}                                 #"
+	echo -e "#       ${R}2nd)${Y} ${GRAY}source ascent.sh   ${B}(interactive mode)${Y}              #"
 	echo -e "#                                                               #"
-	echo -e "#  ${R}1st)${Y} When ascent.sh is invoked, one can pass multiple        #"
-	echo -e "#       of following arguments a.k.a. tests suites/cases:       #"
+	echo -e "#  But first, one need to create a ascent.cfg file, within the  #"
+	echo -e "#  directory from which ascent is invoked/sourced as follows:   #"
+	echo -e "#                                                               #"
+	echo -e "#       ${GRAY}<d0_android_serial>=<d0_phone_number>=<d0_name>${Y}         #"
+	echo -e "#       ${GRAY}<d1_android_serial>=<d1_phone_number>=<d1_name>${Y}         #"
+	echo -e "#                                                               #"
+	echo -e "#  Alterantively, one can also pass config path as follows:     #"
+	echo -e "#                                                               #"                                                             #"
+	echo -e "#       ${GRAY}./ascent -c ${G}<path_to_config_file>${Y} ${G}arg(s)${Y}                #"
+	echo -e "#                                                               #"
+	echo -e "#  ${R}1st)${Y} When ascent.sh is invoked, one can pass several         #"
+	echo -e "#       of following arguments (tests suites/cases):            #"
 	echo -e "#                                                               #"
 	echo -e "#           cases:  ${G}call${Y}, ${G}sms${Y}, ${G}data${Y}                             #"
-	echo -e "#           suites: ${G}2g${Y}, ${G}3g${Y}                                      #"
+	echo -e "#           suites: ${G}2g${Y} (call + sms), ${G}3g${Y} (call + sms + data)     #"
 	echo -e "#                                                               #"
 	echo -e "#  ${R}2nd)${Y} When ascent.sh is sourced, one can use invokations      # "
 	echo -e "#       described in ${R}1st${Y} as well. Additionally one can use      #"
-	echo -e "#       test short cuts, where devices have to be specified:    #"
+	echo -e "#       commands, where devices can be be specified:            #"
 	echo -e "#                                                               #"
-	echo -e "#           ${B}sms ${G}\$d0 \$d1${Y}                                         #"
+	echo -e "#           ${B}sms  ${G}\$d0 \$d1${Y}                                        #"
 	echo -e "#           ${B}call ${G}\$d1 \$d0${Y}                                        #"
 	echo -e "#           ${B}ping ${G}\$d1 ${G}<IP|URL>${Y}                                   #"
 	echo -e "#                                                               #"
 	echo -e "#       Additionally, ascent provides some handy commands,      #"
-	echo -e "#       when tests failed and devices need to be:               #"
+	echo -e "#       when tests failed and devices need to be debugged:      #"
 	echo -e "#                                                               #"
-	echo -e "#           ${B}unlock ${G}(\$d0||\$d1)${Y}                                   #"
-	echo -e "#           ${B}reset (go_to_homescreen)${Y}                            #"
-	echo -e "#           ${B}(adb1||adb2) ${G}shell input keyevent 66${Y}                #"
+	echo -e "#           ${B}go_to_homescreen${Y}                                    #"
+	echo -e "#           ${B}unlock_device ${G}(\$d0||\$d1)${Y}                            #"
+	echo -e "#           ${B}(adb0||adb1) ${G}shell input keyevent 66${Y}                #"
 	echo -e "#                                                               #"
-	echo -e "#  But first, you need to create a \"config\" file, within the    #"
-	echo -e "#  directory from which ascent is invoked/sourced as follows:   #"
-	echo -e "#                                                               #"
-	echo -e "#       ${R}<d0_android_serial>${Y}=${R}<d0_phone_number>${Y}=${R}<d0_name>${Y}         #"
-	echo -e "#       ${R}<d1_android_serial>${Y}=${R}<d1_phone_number>${Y}=${R}<d1_name>${Y}         #"
-	echo -e "#                                                               #"
-	echo -e "#  ${G}More information on https://github.com/blobbsen/ascent${Y}       #"
+	echo -e "#  ${Y}More information on https://github.com/boddenberg-it/ascent${Y}  #"
 	echo -e "#                                                               #"
         echo -e "#################################################################${NC}"
 }
+
+# a bit OOP'ish to not care about whether serial or number has to be passed
+# when complete line from config is saved.
+number_of() {
+	echo "$1" | cut -d "$DELIMITER" -f2
+}
+
+serial_of() {
+	echo "$1" | cut -d "$DELIMITER" -f1
+}
+
+# https://developer.android.com/reference/android/view/KeyEvent.html
+KEYCODE_HOME=3
+KEYCODE_CALL=5
+KEYCODE_ENDCALL=6
+KEYCODE_DPAD_RIGHT=22
+KEYCODE_POWER=26
+KEYCODE_ENTER=66
+
+# colours
+NC="\033[0m"
+R="\033[0;31m"
+G="\033[0;32m"
+B="\033[0;35m"
+Y="\033[1;33m"
+GRAY="\033[0;37m"
+
+# only one character is allowed in fact of using cut,
+# please allign your config file accordingly.
+DELIMITER="="
+
+# default directory is the current working directory
+ASCENT_CONFIG="$(pwd)/ascent.cfg"
+ASCENT_VERSION="0.1"
 
 sanity() {
 
@@ -118,6 +159,7 @@ ping() {
 }
 
 # interactive print_helpers (debugging)
+
 d0() {
 	echo $d0
 }
@@ -134,19 +176,14 @@ adb1() {
 	adb -s "$(serial_of $d1)" $@
 }
 
-reset() {
-	go_to_homescreen
-}
-
 go_to_homescreen() {
 	adb -s "$(serial_of "$d0")" shell input keyevent "$KEYCODE_HOME"
 	adb -s "$(serial_of "$d1")" shell input keyevent "$KEYCODE_HOME"
 }
 
-# unlock() expects that there is no password or pattern to unlock the phone.
-# A straight swipe from bottom to center should unlock the phone.
-unlock() {
-	# screen resolution
+# unlock_device() expects that there is no password or pattern to unlock the phone.
+# (A straight swipe from bottom to center should unlock the phone.)
+unlock_device() {
 	screen="$(adb -s $(serial_of $1) shell dumpsys display | grep deviceWidth \
 		| awk -F"deviceWidth=" '{print $2}' | head -n 1)"
 
@@ -215,53 +252,8 @@ do_call() {
 	echo
 }
 
-# a bit OOP'ish to not care about whether serial or number has to be passed
-number_of() {
-	echo "$1" | cut -d "$DELIMITER" -f2
-}
 
-serial_of() {
-	echo "$1" | cut -d "$DELIMITER" -f1
-}
-
-# https://developer.android.com/reference/android/view/KeyEvent.html
-KEYCODE_HOME=3
-KEYCODE_CALL=5
-KEYCODE_ENDCALL=6
-KEYCODE_DPAD_RIGHT=22
-KEYCODE_POWER=26
-KEYCODE_ENTER=66
-
-# colours
-NC="\033[0m"
-R="\033[0;31m"
-G="\033[0;32m"
-B="\033[0;35m"
-Y="\033[1;33m"
-
-# only one character is allowed in fact of using cut,
-# please allign your config file accordingly.
-DELIMITER="="
-
-# default directory is the current working directory
-ASCENT_CONFIG="$(pwd)/ascent.cfg"
-
-interactive_mode(){
-	print_help
-	sanity
-}
-
-invokation_mode() {
-	sanity
-	if [ $? -eq 0 ]; then
-		for var in "$@"; do
-  			$var
-			if [ $? -gt 0 ]; then print_help; fi
-		done
-	fi
-}
-
-# check if config file is passed?
+# check if config file is passed or user request man page?
 if [ "$1" = "-c" ]; then
 	echo "[TEST]config INCOMING! $2"
 	if [ -f "$2" ]; then
@@ -272,10 +264,21 @@ if [ "$1" = "-c" ]; then
 		echo "[ERROR] passed config file does not exist!]"
 		return 1
 	fi
+elif [[ "$1" == *"help"* ]]; then
+	print_help
+	exit 0
 fi
 
 if [ $# -gt 0 ]; then
-	invokation_mode $@
+	sanity
+	if [ $? -eq 0 ]; then
+		for var in "$@"; do
+				$var
+			if [ $? -gt 0 ]; then print_help; fi
+		done
+	fi
 else
-	interactive_mode
+	# interactive mode (only when sourced)
+	print_help
+	sanity
 fi
