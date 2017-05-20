@@ -102,12 +102,15 @@ data() {
 		ping "$d1" "8.8.8.8"
 }
 
-# interactive helpers
+# interactive helpers (debugging)
 reset() {
 	go_to_homescreen
 }
 
+# unlock() expects that there is no password or pattern to unlock the phone.
+# A straight swipe from bottom to center should unlock the phone.
 unlock() {
+	# screen resolution
 	screen="$(adb -s $(serial_of $1) shell dumpsys display | grep deviceWidth \
 		| awk -F"deviceWidth=" '{print $2}' | head -n 1)"
 
@@ -129,6 +132,14 @@ adb0() {
 
 adb1() {
 	adb -s "$(serial_of $d1)" $@
+}
+
+d0() {
+	echo $d0
+}
+
+d1() {
+	echo $d1
 }
 
 # actual tests
