@@ -142,9 +142,14 @@ sanity() {
 	fi
 }
 
-# test functions
-send_sms() {
+# TEST FUNCTIONS
 
+# send_sms passes text message already via intent, but additionally it sends
+# another text via adb to ensure that sms holds text. On some devices one can
+# not pass sms text as intent.
+#
+# Note: The SMS Messaging (AOSP) app works best with ascent.sh
+send_sms() {
 	go_to_homescreen
 	echo -e "$Y[TEST-SMS] ${G}$1${Y} sends SMS to ${G}$2${Y} ${NC}"
 
@@ -189,16 +194,6 @@ do_call() {
 }
 
 #  test wrapper
-2g() {
-	sms
-	call
-}
-
-3g() {
-	2g
-	data
-}
-
 sms() {
 	if [ $# -eq 2 ]; then
 		send_sms "$1" "$2"
@@ -222,7 +217,17 @@ data() {
   ping "$d1" 8.8.8.8
 }
 
-# interactive functions
+2g() {
+	sms
+	call
+}
+
+3g() {
+	2g
+	data
+}
+
+# interactive mode helper functions
 adb0() {
 	adb -s "$(serial_of $d0)" $@
 }
@@ -231,18 +236,23 @@ adb1() {
 	adb -s "$(serial_of $d1)" $@
 }
 
+# some devices may require adb root access to ping
+# ping() is used by "data" test-wrapper
 ping() {
 	echo -e "${Y}[TEST-DATA] ${G}$1${Y} tries to ping ${G}$2${Y} ${NC}"
 	adb -s "$(serial_of "$1")" shell ping -c 3 "$2"
 }
 
+# resets both devices at the same time by killing all activities and
+# jumping to the home screen.
 go_to_homescreen() {
+	# TODO: add killing all opened activities :)
 	adb -s "$(serial_of "$d0")" shell input keyevent "$KEYCODE_HOME"
 	adb -s "$(serial_of "$d1")" shell input keyevent "$KEYCODE_HOME"
 }
 
 # unlock_device() expects that there is no password or pattern to unlock the phone.
-# (A straight swipe from bottom to center should unlock the phone.)
+# A straight swipe from bottom to center should unlock the phone.
 unlock_device() {
 	if [ $# -ne 1 ]; then
 		echo
