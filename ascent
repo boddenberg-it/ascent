@@ -110,6 +110,7 @@ sanity() {
 		if [ ${#d0} -gt 10 ] && [ ${#d1} -gt 10 ]; then
 			echo -e "${G}[INFO] config $ASCENT_CONFIG has been parsed:${NC}"
 			cat "$ASCENT_CONFIG"
+			echo
 		else
 			echo -e "${R}[ERROR] content of config file seems corrupted,"
 			echo -e "        thus it could not been parsed."
