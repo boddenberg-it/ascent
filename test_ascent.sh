@@ -29,7 +29,7 @@ test_case() {
 summarise_suites() {
   echo
   if [ $errors -eq 0 ]; then
-    echo -e "${G}[RESULT] ALL TESTCASES DID PASS SUCCESSFULLY${NC}"
+    echo -e "${G}[RESULT] ALL TESTCASES DID PASS SUCCESSFULLY :)${NC}"
     echo
   else
     echo -e "${R}[RESULT] $errors TESTCASE(S) FAILED !!!${NC}"
