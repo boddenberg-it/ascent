@@ -15,14 +15,14 @@ print_help() {
 	echo -e "#                                                               #"
 	echo -e "#  There are ${R}two${Y} ways of using ascent.sh:                       #"
 	echo -e "#                                                               #"
-	echo -e "#       ${R}1st)${Y} ${GRAY}./ascent ${G}arg(s)${Y}                                 #"
-	echo -e "#       ${R}2nd)${Y} ${GRAY}source ascent   ${B}(interactive mode)${Y}              #"
+	echo -e "#       ${R}1st)${Y} ${GRAY}./ascent ${G}arg(s)${Y}                                    #"
+	echo -e "#       ${R}2nd)${Y} ${GRAY}source ascent   ${B}(interactive mode)${Y}                 #"
 	echo -e "#                                                               #"
 	echo -e "#  But first, one need to create a ascent.cfg file, within the  #"
 	echo -e "#  directory from which ascent is invoked/sourced as follows:   #"
 	echo -e "#                                                               #"
-	echo -e "#       ${GRAY}<d0_android_serial>=<d0_phone_number>=<d0_name>${Y}         #"
-	echo -e "#       ${GRAY}<d1_android_serial>=<d1_phone_number>=<d1_name>${Y}         #"
+	echo -e "#   ${GRAY}device_0=${G}<d0_android_serial>${GRAY}=${G}<d0_phone_number>${GRAY}=${G}<d0_name>${Y}    #"
+	echo -e "#   ${GRAY}device_1=${G}<d1_android_serial>${GRAY}=${G}<d1_phone_number>${GRAY}=${G}<d1_name>${Y}    #"
 	echo -e "#                                                               #"
 	echo -e "#  Alterantively, one can also pass config path as follows:     #"
 	echo -e "#                                                               #"                                                             #"
@@ -57,11 +57,11 @@ print_help() {
 # a bit OOP'ish to not care about whether serial or number has to be passed
 # when complete line from config is saved.
 number_of() {
-	echo "$1" | cut -d "$DELIMITER" -f2
+	echo "$1" | cut -d "$DELIMITER" -f3
 }
 
 serial_of() {
-	echo "$1" | cut -d "$DELIMITER" -f1
+	echo "$1" | cut -d "$DELIMITER" -f2
 }
 
 # https://developer.android.com/reference/android/view/KeyEvent.html
@@ -102,9 +102,9 @@ sanity() {
 		export ASCENT_CONFIG=""
 		return 1
 	else
-		d0="$(head -n 1 "$ASCENT_CONFIG")"
-		d1="$(tail -n 1 "$ASCENT_CONFIG")"
-
+		# parsing config file
+		d0="$(cat "$ASCENT_CONFIG" | grep device_0 )"
+		d1="$(cat "$ASCENT_CONFIG" | grep device_1 )"
 		# check whether holds content, otherwise following check would succeed in
 		# case of an empty file.
 		if [ ${#d0} -gt 10 ] && [ ${#d1} -gt 10 ]; then

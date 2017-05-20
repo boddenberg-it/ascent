@@ -1,2 +1,5 @@
-05cd99e0f0dd9bc8=000=nexus5
-4df1d42174595f61=001=s3
+# ascent config file
+# https://github.com/boddenberg-it/ascent
+
+device_0=05cd99e0f0dd9bc8=000=nexus5
+device_1=4df1d42174595f61=001=s3
