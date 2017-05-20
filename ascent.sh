@@ -3,7 +3,7 @@
 print_help() {
 	echo -e "${Y}#################################################################"
 	echo -e "#                                                               #"
-	echo -e "#   ${B}~${G}:${B}~${R}  A${GRAY}ndroid ${R}S${GRAY}emiautomated ${R}CE${GRAY}llular ${R}N${GRAY}etwork ${R}T${GRAY}esting${Y}  ${B}~${G}:${B}~${Y}    #"
+	echo -e "#   ${B}~${G}:${B}~${Y}  ${R}A${GRAY}ndroid ${R}S${GRAY}emiautomated ${R}CE${GRAY}llular ${R}N${GRAY}etwork ${R}T${GRAY}esting${Y}  ${B}~${G}:${B}~${Y}    #"
 	echo -e "#                                                               #"
 	echo -e "#  Ascent shall help testing cellular networks with 2 Android   #"
 	echo -e "#  devices by only ovserving them - no physical interaction.    #"
