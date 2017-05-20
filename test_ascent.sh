@@ -26,7 +26,7 @@ test_case() {
   fi
 }
 
-summarise_suites() {
+summarise_suite() {
   echo
   if [ $errors -eq 0 ]; then
     echo -e "${G}[RESULT] ALL TESTCASES DID PASS SUCCESSFULLY :)${NC}"
@@ -49,4 +49,4 @@ test_case "ONLY ONE DEVICE IS CONNECTED" "valid_config" 1
 echo -e "${B}[INFO] Please connect BOTH devices now...${NC}"; read
 test_case "ONLY ONE DEVICE IS CONNECTED" "valid_config" 0
 
-summarise_suites
+summarise_suite
