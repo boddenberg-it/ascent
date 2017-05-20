@@ -93,13 +93,31 @@ sanity() {
 	echo
 	echo -e "${Y}[SANITY_CHECK] can config be found?${NC}"
 	if [ ! -f "$ASCENT_CONFIG" ]; then
-		echo -e "${R}[ERROR] no config file found, please provide one in CWD!${NC}"
-		print_help
+		echo
+		echo -e "${R}[ERROR] No config file found! Please provide one in current working "
+		echo -e "        directory or pass on e.g.: "
+		echo
+		echo -e "            ./ascent -c ~/.ascent${NC}"
+		echo
+		export ASCENT_CONFIG=""
 		return 1
 	else
 		d0="$(head -n 1 "$ASCENT_CONFIG")"
 		d1="$(tail -n 1 "$ASCENT_CONFIG")"
-		echo -e "${G}[INFO] config successfully parsed ($ASCENT_CONFIG)${NC}"
+
+		# check whether holds content, otherwise following check would succeed in
+		# case of an empty file.
+		if [ ${#d0} -gt 10 ] && [ ${#d1} -gt 10 ]; then
+			echo -e "${G}[INFO] config $ASCENT_CONFIG has been parsed:${NC}"
+			cat "$ASCENT_CONFIG"
+		else
+			echo -e "${R}[ERROR] content of config file seems corrupted,"
+			echo -e "        thus it could not been parsed."
+			echo -e "        content of config file:${Y}"
+			cat "$ASCENT_CONFIG"
+			echo
+			return 1
+		fi
 	fi
 
 	echo -e "${Y}[SANITY_CHECK] are both devices connected?${NC}"
@@ -255,14 +273,10 @@ do_call() {
 
 # check if config file is passed or user request man page?
 if [ "$1" = "-c" ]; then
-	echo "[TEST]config INCOMING! $2"
+	# simply export ASCENT_CONFIG sanity() will take care about wrong config
+	export ASCENT_CONFIG="$2"
 	if [ -f "$2" ]; then
-		export ASCENT_CONFIG="$2"
-		echo "[INFO] config INCOMING! $2"
 		shift 2
-	else
-		echo "[ERROR] passed config file does not exist!]"
-		return 1
 	fi
 elif [[ "$1" == *"help"* ]]; then
 	print_help
