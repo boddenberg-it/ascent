@@ -51,14 +51,14 @@ sanity() {
 
 	echo
 	echo -e "${Y}[SANITY_CHECK] can config be found?${NC}"
-	if [ ! -f "$(pwd)/config" ]; then
+	if [ ! -f "$ASCENT_CONFIG" ]; then
 		echo -e "${R}[ERROR] no config file found, please provide one in CWD!${NC}"
 		print_help
 		return 1
 	else
-		d0="$(head -n 1 "$(pwd)"/config)"
-		d1="$(tail -n 1 "$(pwd)"/config)"
-		echo -e "${G}[INFO] config successfully parsed ($(pwd)/config)${NC}"
+		d0="$(head -n 1 "$ASCENT_CONFIG")"
+		d1="$(tail -n 1 "$ASCENT_CONFIG")"
+		echo -e "${G}[INFO] config successfully parsed ($ASCENT_CONFIG)${NC}"
 	fi
 
 	echo -e "${Y}[SANITY_CHECK] are both devices connected?${NC}"
@@ -153,6 +153,7 @@ unlock() {
 	width="$(echo $screen | cut -d ',' -f1)"
 	height="$(echo $screen | cut -d '=' -f2 | cut -d '}' -f1)"
 
+	# swipe coordinates - from bottom to center
 	x=$((width/2))
 	y1=$((height-20))
 	y2=$((height/2))
@@ -214,8 +215,6 @@ do_call() {
 	echo
 }
 
-
-
 # a bit OOP'ish to not care about whether serial or number has to be passed
 number_of() {
 	echo "$1" | cut -d "$DELIMITER" -f2
@@ -230,6 +229,7 @@ KEYCODE_HOME=3
 KEYCODE_CALL=5
 KEYCODE_ENDCALL=6
 KEYCODE_DPAD_RIGHT=22
+KEYCODE_POWER=26
 KEYCODE_ENTER=66
 
 # colours
@@ -243,11 +243,15 @@ Y="\033[1;33m"
 # please allign your config file accordingly.
 DELIMITER="="
 
-# the two android devices used for testing
+# default directory is the current working directory
+ASCENT_CONFIG="$(pwd)/ascent.cfg"
 
+interactive_mode(){
+	print_help
+	sanity
+}
 
-if [ $# -gt 0 ]; then
-	# invoking script
+invokation_mode() {
 	sanity
 	if [ $? -eq 0 ]; then
 		for var in "$@"; do
@@ -255,15 +259,23 @@ if [ $# -gt 0 ]; then
 			if [ $? -gt 0 ]; then print_help; fi
 		done
 	fi
-else
-	# sourcing script (interactive mode)
-	print_help
-	sanity
-	echo -e "${Y}[INFO] sourcing $(dirname $0)/$(basename $0)${NC}"
-	source "$(dirname $0)/$(basename $0)"
-	# if $? -gt 0]; then
+}
 
-	# else
-	#      source script $(dirname foo blakeks)
-	# fi
+# check if config file is passed?
+if [ "$1" = "-c" ]; then
+	echo "[TEST]config INCOMING! $2"
+	if [ -f "$2" ]; then
+		export ASCENT_CONFIG="$2"
+		echo "[INFO] config INCOMING! $2"
+		shift 2
+	else
+		echo "[ERROR] passed config file does not exist!]"
+		return 1
+	fi
+fi
+
+if [ $# -gt 0 ]; then
+	invokation_mode $@
+else
+	interactive_mode
 fi
