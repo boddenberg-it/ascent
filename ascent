@@ -203,6 +203,13 @@ go_to_homescreen() {
 # unlock_device() expects that there is no password or pattern to unlock the phone.
 # (A straight swipe from bottom to center should unlock the phone.)
 unlock_device() {
+	if [ $# -ne 1 ]; then
+		echo
+		echo -e "${R}[ERROR] You must specify which device (\$d0||\$d1) should be unlocked!"
+		echo
+		return 1
+	fi
+
 	screen="$(adb -s $(serial_of $1) shell dumpsys display | grep deviceWidth \
 		| awk -F"deviceWidth=" '{print $2}' | head -n 1)"
 
