@@ -281,13 +281,22 @@ if [ "$1" = "-c" ]; then
 	fi
 elif [[ "$1" == *"help"* ]]; then
 	print_help
-	exit 0
+	return 0
 fi
 
 if [ $# -gt 0 ]; then
-	sanity
+
+	# Enable error code evaluation for test_ascent.sh
+	if [ "$1" = "testing" ]; then
+		sanity
+		exit $?
+	else
+		# Calling normal sanity check otherwise
+		sanity
+	fi
+
 	# dryrun is used by test_ascent.sh to avoid calling print_help()
-	if [ $? -eq 0 ] && [ "$1" != "dryrun" ]; then
+	if [ $? -eq 0 ]; then
 		for var in "$@"; do
 				$var
 			if [ $? -gt 0 ]; then print_help; fi
