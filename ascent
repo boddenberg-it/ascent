@@ -113,7 +113,7 @@ sanity() {
 		else
 			echo -e "${R}[ERROR] content of config file seems corrupted,"
 			echo -e "        thus it could not been parsed."
-			echo -e "        content of config file:${Y}"
+			echo -e "        content of config file:${NC}"
 			cat "$ASCENT_CONFIG"
 			echo
 			return 1
@@ -285,7 +285,8 @@ fi
 
 if [ $# -gt 0 ]; then
 	sanity
-	if [ $? -eq 0 ]; then
+	# dryrun is used by test_ascent.sh to avoid calling print_help()
+	if [ $? -eq 0 ] && [ "$1" != "dryrun" ]; then
 		for var in "$@"; do
 				$var
 			if [ $? -gt 0 ]; then print_help; fi
