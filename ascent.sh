@@ -280,6 +280,7 @@ ping() {
 		echo -e "${Y}[TEST-DATA] ${G}$d1${Y} tries to ping ${G}$2${Y} ${NC}"
 		adb -s "$(serial_of "$d1")" shell ping -c 3 "$2"
 	fi
+	echo
 }
 
 # unlock_device() expects that there is no password or pattern to unlock the phone.
