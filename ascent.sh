@@ -301,9 +301,7 @@ unlock_device() {
 		device="$d0"
 	elif [ "$1" = "d1" ]; then
 		device="$d1"
-		echo d1
 	fi
-	echo  $device
 
 	screen_res="$(adb -s "$(serial_of "$device")" shell dumpsys display | grep deviceWidth \
 		| awk -F"deviceWidth=" '{print $2}' | head -n 1)"
