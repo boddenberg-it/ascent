@@ -259,7 +259,6 @@ adb1() {
 	adb -s "$(serial_of "$d1")" "$@"
 }
 
-# Resets both devices at the same time by killing all activities and
 # jumping to the home screen.
 go_to_homescreen() {
 	# TODO: add killing all opened activities :)
