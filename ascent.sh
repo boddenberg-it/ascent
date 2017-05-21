@@ -276,9 +276,12 @@ ping() {
 	if [ "$1" = "d0" ]; then
 		echo -e "${Y}[TEST-DATA] ${G}$d0${Y} tries to ping ${G}$2${Y} ${NC}"
 		adb -s "$(serial_of "$d0")" shell ping -c 3 "$2"
-	else
+	elif [ "$1" = "d1" ]; then
 		echo -e "${Y}[TEST-DATA] ${G}$d1${Y} tries to ping ${G}$2${Y} ${NC}"
 		adb -s "$(serial_of "$d1")" shell ping -c 3 "$2"
+	else
+		echo -e "${Y}[TEST-DATA] ${G}$1${Y} tries to ping ${G}$2${Y} ${NC}"
+		adb -s "$(serial_of "$1")" shell ping -c 3 "$2"
 	fi
 	echo
 }
