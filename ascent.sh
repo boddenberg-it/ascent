@@ -285,14 +285,23 @@ ping() {
 # unlock_device() expects that there is no password or pattern to unlock the phone.
 # A straight swipe from bottom to center should unlock the phone.
 unlock_device() {
+	device=""
+
 	if [ $# -ne 1 ]; then
 		echo
 		echo -e "${R}[ERROR] You must specify which device (\$d0||\$d1) should be unlocked!"
 		echo
 		return 1
+	elif [ "$1" = "d0" ]; then
+		echo d0
+		device="$d0"
+	elif [ "$1" = "d1" ]; then
+		device="$d1"
+		echo d1
 	fi
+	echo  $device
 
-	screen_res="$(adb -s "$(serial_of "$1")" shell dumpsys display | grep deviceWidth \
+	screen_res="$(adb -s "$(serial_of "$device")" shell dumpsys display | grep deviceWidth \
 		| awk -F"deviceWidth=" '{print $2}' | head -n 1)"
 
 	width="$(echo "$screen_res" | cut -d ',' -f1)"
@@ -303,9 +312,9 @@ unlock_device() {
 	y1=$((height-20))
 	y2=$((height/2))
 
-	adb -s "$(serial_of "$1")" shell input keyevent "$KEYCODE_POWER"
+	adb -s "$(serial_of "$device")" shell input keyevent "$KEYCODE_POWER"
 	sleep 1
-	adb -s "$(serial_of "$1")" shell input swipe "$x" "$y1" "$x" "$y2"
+	adb -s "$(serial_of "$device")" shell input swipe "$x" "$y1" "$x" "$y2"
 }
 
 # INIT
