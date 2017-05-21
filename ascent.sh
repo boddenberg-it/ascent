@@ -1,28 +1,20 @@
 #!/bin/bash
 
 print_help() {
-	echo -e "${Y}#################################################################"
-	echo -e "#                                                               #"
-	echo -e "#   ${B}~${G}:${B}~${Y}  ${R}A${GRAY}ndroid ${R}S${GRAY}emiautomated ${R}CE${GRAY}llular ${R}N${GRAY}etwork ${R}T${GRAY}esting${Y}  ${B}~${G}:${B}~${Y}    #"
-	echo -e "#                                                               #"
-	echo -e "#  Ascent shall help testing cellular networks with 2 Android   #"
-	echo -e "#  devices by only ovserving them - no physical interaction.    #"
-	echo -e "#  It provides an adb-based CLI to call, send SMS and verify    #"
-	echo -e "#  data. Although \"tests\" still have to be manually verified.   #"
-	echo -e "#                                                               #"
-	echo -e "#  author:  André Boddenberg (ascent@boddenberg.it)             #"                                                          #"
-	echo -e "#  version: $ASCENT_VERSION                                                 #"
-	echo -e "#                                                               #"
+
+	print_interactive_mode_banner
+
 	echo -e "#  There are ${R}two${Y} ways of using ascent.sh:                       #"
 	echo -e "#                                                               #"
-	echo -e "#       ${R}1st)${Y} ${GRAY}./ascent ${G}arg(s)${Y}                                    #"
-	echo -e "#       ${R}2nd)${Y} ${GRAY}source ascent   ${B}(interactive mode)${Y}                 #"
+	echo -e "#       ${R}1st)${Y} ${GRAY}./ascent.sh ${G}arg(s)${Y}                                 #"
+	echo -e "#       ${R}2nd)${Y} ${GRAY}source ascent.sh   ${B}(interactive mode)${Y}              #"
 	echo -e "#                                                               #"
-	echo -e "#  But first, one need to create a ascent.cfg file, within the  #"
-	echo -e "#  directory from which ascent is invoked/sourced as follows:   #"
+	echo -e "#  But first, one need to create a ascent.cfg file inside the   #"
+	echo -e "#  directory from which ascent is invoked/sourced or create     #"
+	echo -e "#  ~/.ascent holding following information:                     #"
 	echo -e "#                                                               #"
-	echo -e "#   ${GRAY}device_0=${G}<d0_android_serial>${GRAY}=${G}<d0_phone_number>${GRAY}=${G}<d0_name>${Y}    #"
-	echo -e "#   ${GRAY}device_1=${G}<d1_android_serial>${GRAY}=${G}<d1_phone_number>${GRAY}=${G}<d1_name>${Y}    #"
+	echo -e "#       ${GRAY}device_0=${G}<android_serial>${GRAY}=${G}<msisdn>${GRAY}=${G}<name>${Y}               #"
+	echo -e "#       ${GRAY}device_1=${G}<android_serial>${GRAY}=${G}<msisdn>${GRAY}=${G}<name>${Y}               #"
 	echo -e "#                                                               #"
 	echo -e "#  Alterantively, one can also pass config path as follows:     #"
 	echo -e "#                                                               #"                                                             #"
@@ -45,13 +37,33 @@ print_help() {
 	echo -e "#       Additionally, ascent provides some handy commands,      #"
 	echo -e "#       when tests failed and devices need to be debugged:      #"
 	echo -e "#                                                               #"
+	echo -e "#           ${B}help${Y}                                                #"
+	echo -e "#           ${B}sanity${Y}                                              #"
 	echo -e "#           ${B}go_to_homescreen${Y}                                    #"
 	echo -e "#           ${B}unlock_device ${G}(\$d0||\$d1)${Y}                            #"
 	echo -e "#           ${B}(adb0||adb1) ${G}shell input keyevent 66${Y}                #"
 	echo -e "#                                                               #"
 	echo -e "#  ${Y}More information on https://github.com/boddenberg-it/ascent${Y}  #"
 	echo -e "#                                                               #"
-        echo -e "#################################################################${NC}"
+  echo -e "#################################################################${NC}"
+}
+
+print_interactive_mode_banner() {
+	echo -e "${Y}#################################################################"
+	echo -e "#                                                               #"
+	echo -e "#   ${B}~${G}:${B}~${Y}  ${R}A${GRAY}ndroid ${R}S${GRAY}emiautomated ${R}CE${GRAY}llular ${R}N${GRAY}etwork ${R}T${GRAY}esting${Y}  ${B}~${G}:${B}~${Y}    #"
+	echo -e "#                                                               #"
+	echo -e "#  Ascent shall help testing cellular networks with 2 Android   #"
+	echo -e "#  devices by only ovserving them - no physical interaction.    #"
+	echo -e "#  It provides an adb-based CLI to call, send SMS and verify    #"
+	echo -e "#  data. Although \"tests\" still have to be manually verified.   #"
+	echo -e "#                                                               #"
+	echo -e "#  author:  André Boddenberg (ascent@boddenberg.it)             #"                                                          #"
+	echo -e "#  version: $ASCENT_VERSION                                                 #"
+	echo -e "#                                                               #"
+	if [ $# -gt 0 ]; then
+		echo -e "#################################################################${NC}"
+	fi
 }
 
 # Kind of OOP'ish approach to not care about whether serial or number has to
@@ -120,6 +132,8 @@ sanity() {
 			echo -e "${R}[ERROR] content of config file seems corrupted, thus it could"
 			echo -e "        not been parsed. Content of config file:${NC}"
 			cat "$ASCENT_CONFIG"
+			echo
+			echo -e "${Y}config path: $ASCENT_CONFIG${Y}"
 			echo
 			return 1
 		fi
@@ -236,19 +250,23 @@ adb1() {
 	adb -s "$(serial_of $d1)" $@
 }
 
-# Some devices may require adb root access to ping.
-# ping() is used by "data" test-wrapper.
-ping() {
-	echo -e "${Y}[TEST-DATA] ${G}$1${Y} tries to ping ${G}$2${Y} ${NC}"
-	adb -s "$(serial_of "$1")" shell ping -c 3 "$2"
-}
-
 # Resets both devices at the same time by killing all activities and
 # jumping to the home screen.
 go_to_homescreen() {
 	# TODO: add killing all opened activities :)
 	adb -s "$(serial_of "$d0")" shell input keyevent "$KEYCODE_HOME"
 	adb -s "$(serial_of "$d1")" shell input keyevent "$KEYCODE_HOME"
+}
+
+help() {
+	print_help
+}
+
+# Some devices may require adb root access to ping.
+# ping() is used by "data" test-wrapper.
+ping() {
+	echo -e "${Y}[TEST-DATA] ${G}$1${Y} tries to ping ${G}$2${Y} ${NC}"
+	adb -s "$(serial_of "$1")" shell ping -c 3 "$2"
 }
 
 # unlock_device() expects that there is no password or pattern to unlock the phone.
@@ -279,6 +297,10 @@ unlock_device() {
 
 # INIT
 
+# check whether global config file is available
+if [ -f ~/.ascent ]; then
+		export ASCENT_CONFIG=~/.ascent
+fi
 # Check whether config file is passed or user requests help?
 if [ "$1" = "-c" ]; then
 	# Simply export ASCENT_CONFIG. sanity() will take care about wrong configs.
@@ -291,6 +313,7 @@ elif [ "$1" = "-h" ] || [[ "$1" == *"help"* ]]; then
 	exit 0
 fi
 
+# invokation with test-case/suite
 if [ $# -gt 0 ]; then
 	# Enable error code evaluation for test_ascent.sh.
 	if [ "$1" = "testing" ]; then
@@ -316,6 +339,6 @@ if [ $# -gt 0 ]; then
 	fi
 else
 	# interactive mode (only when sourced or invoked without test-case/suite)
-	print_help
+  print_interactive_mode_banner "interactive_mode"
 	sanity
 fi
