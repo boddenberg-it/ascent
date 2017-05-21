@@ -14,7 +14,7 @@ errors=0
 test_case() {
   echo
   echo -e "${B}[TESTCASE] $1 ${NC}"
-  ./ascent -c "configs_for_tests/$2" "testing"
+  ./ascent.sh -c "configs_for_tests/$2" "testing"
 
   if [ $? -ne $3 ]; then
     errors=$((errors+1))
