@@ -16,7 +16,7 @@ test_case() {
   echo -e "${B}[TESTCASE] $1 ${NC}"
   ./ascent.sh -c "configs_for_tests/$2" "testing"
 
-  if [ $? -ne $3 ]; then
+  if [ $? -ne "$3" ]; then
     errors=$((errors+1))
     echo -e "${R}[TESTCASE] $1 FAILED!!!${NC}"
     echo
@@ -44,7 +44,7 @@ test_case "EMPTY CONFIG" "empty_config" 1
 test_case "INVALID CONFIG" "invalid_config" 1
 
 echo -e "${B}[INFO] Please connect ONE device now...${NC}"; read
-test_case "ONLY ONE DEVICE IS CONNECTED" "valid_config" 1
+test_case "ONLY ONE OR LESS DEVICE IS CONNECTED" "valid_config" 1
 
 echo -e "${B}[INFO] Please connect BOTH devices now...${NC}"; read
 test_case "ONLY ONE DEVICE IS CONNECTED" "valid_config" 0
