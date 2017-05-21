@@ -210,7 +210,11 @@ do_call() {
 # TEST WRAPPER
 sms() {
 	if [ $# -eq 2 ]; then
-		send_sms "$1" "$2"
+		if [ "$1" = "d0" ]; then
+			send_sms "$d0" "$d1"
+		else
+			send_sms "$d1" "$d0"
+		fi
 	else
 		send_sms "$d0" "$d1"
 		send_sms "$d1" "$d0"
@@ -219,7 +223,11 @@ sms() {
 
 call() {
 	if [ $# -eq 2 ]; then
-		do_call "$1" "$2"
+		if [ "$1" = "d0" ]; then
+			do_call "$d0" "$d1"
+		else
+			do_call "$d1" "$d0"
+		fi
 	else
 		do_call "$d0" "$d1"
 		do_call "$d1" "$d0"
@@ -265,8 +273,13 @@ help() {
 # Some devices may require adb root access to ping.
 # ping() is used by "data" test-wrapper.
 ping() {
-	echo -e "${Y}[TEST-DATA] ${G}$1${Y} tries to ping ${G}$2${Y} ${NC}"
-	adb -s "$(serial_of "$1")" shell ping -c 3 "$2"
+	if [ "$1" = "d0" ]; then
+		echo -e "${Y}[TEST-DATA] ${G}$d0${Y} tries to ping ${G}$2${Y} ${NC}"
+		adb -s "$(serial_of "$d0")" shell ping -c 3 "$2"
+	else
+		echo -e "${Y}[TEST-DATA] ${G}$d1${Y} tries to ping ${G}$2${Y} ${NC}"
+		adb -s "$(serial_of "$d1")" shell ping -c 3 "$2"
+	fi
 }
 
 # unlock_device() expects that there is no password or pattern to unlock the phone.
