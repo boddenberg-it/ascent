@@ -120,8 +120,8 @@ sanity() {
 		return 1
 	else
 		# parsing config
-		d0="$(cat "$ASCENT_CONFIG" | grep device_0= )"
-		d1="$(cat "$ASCENT_CONFIG" | grep device_1= )"
+		d0="$(grep device_0= "$ASCENT_CONFIG" )"
+		d1="$(grep device_1= "$ASCENT_CONFIG")"
 		# check (unprecisely) whether d0 and d1 hold "enough" information
 		if [ ${#d0} -gt 20 ] && [ ${#d1} -gt 20 ]; then
 			echo -e "${G}[INFO] config $ASCENT_CONFIG has been parsed:${NC}"
@@ -243,11 +243,11 @@ data() {
 
 # INTERACTIVE MODE HELPER FUNCTIONS
 adb0() {
-	adb -s "$(serial_of $d0)" $@
+	adb -s "$(serial_of "$d0")" "$@"
 }
 
 adb1() {
-	adb -s "$(serial_of $d1)" $@
+	adb -s "$(serial_of "$d1")" "$@"
 }
 
 # Resets both devices at the same time by killing all activities and
@@ -279,20 +279,20 @@ unlock_device() {
 		return 1
 	fi
 
-	screen_res="$(adb -s $(serial_of $1) shell dumpsys display | grep deviceWidth \
+	screen_res="$(adb -s "$(serial_of "$1")" shell dumpsys display | grep deviceWidth \
 		| awk -F"deviceWidth=" '{print $2}' | head -n 1)"
 
-	width="$(echo $screen_res | cut -d ',' -f1)"
-	height="$(echo $screen_res | cut -d '=' -f2 | cut -d '}' -f1)"
+	width="$(echo "$screen_res" | cut -d ',' -f1)"
+	height="$(echo "$screen_res" | cut -d '=' -f2 | cut -d '}' -f1)"
 
 	# swipe coordinates - from bottom to center
 	x=$((width/2))
 	y1=$((height-20))
 	y2=$((height/2))
 
-	adb -s "$(serial_of $1)" shell input keyevent "$KEYCODE_POWER"
+	adb -s "$(serial_of "$1")" shell input keyevent "$KEYCODE_POWER"
 	sleep 1
-	adb -s "$(serial_of $1)" shell input swipe "$x" "$y1" "$x" "$y2"
+	adb -s "$(serial_of "$1")" shell input swipe "$x" "$y1" "$x" "$y2"
 }
 
 # INIT
