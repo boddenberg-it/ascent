@@ -1,4 +1,8 @@
 # ascent config file
+#
+# device_0=<android_serial>=<msisdn>=<name>
+# device_1=<android_serial>=<msisdn>=<name>
+#
 # https://github.com/boddenberg-it/ascent
 
 device_0=05cd99e0f0dd9bc8=000=nexus5
