@@ -16,7 +16,7 @@ Because ascent will only execute tests, but you still have to verify them by
 Please click on the preview image to watch a short demo (~12 MB).
 
 <a href="https://github.boddenberg.it/ascent/ascent_demo.mp4" target="_blank"><img src="https://github.boddenberg.it/ascent/ascent_video_preview.jpg"
-alt="IMAGE ALT TEXT HERE" width="790" height="420" border="10" /></a>
+alt="demo (low quality)"/></a>
 
 <a href="https://github.boddenberg.it/ascent/ascent_demo_full_qualitiy.mp4" target="_blank"><i>demo (full quality ~171 MB)</i></a>
 
