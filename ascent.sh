@@ -68,14 +68,14 @@ print_interactive_mode_banner() {
 	fi
 }
 
-# Kind of OOP'ish approach to not care about whether serial or number has to
+# Kind of OOP'ish approach to not care about whether serial or msisdn has to
 # be passed. Thus enabling a smooth interactive mode by only specifying $d0
-# or $d1 and not its serial or number, which would look like:
+# or $d1 and not its serial or msisdn, which would look like:
 #
 #      $ source ascent.sh
-#      $ call $d0_serial $d1_number
+#      $ call $d0_serial $d1_msisdn
 
-number_of() {
+msisdn_of() {
 	echo "$1" | cut -d "$DELIMITER" -f3
 }
 
@@ -170,7 +170,7 @@ send_sms() {
 	echo -e "$Y[TEST-SMS] ${G}$1${Y} sends SMS to ${G}$2${Y} ${NC}"
 
 	adb -s "$(serial_of "$1")" shell am start -a android.intent.action.SENDTO \
-		-d sms:"$(number_of "$2")" --es sms_body "test_intent" --ez exit_on_sent true
+		-d sms:"$(msisdn_of "$2")" --es sms_body "test_intent" --ez exit_on_sent true
 
 	sleep 0.2
   	adb -s "$(serial_of "$1")" shell input text "test_input"
@@ -188,7 +188,7 @@ do_call() {
 	echo -e "${Y}[TEST-CALL] ${G}$1${Y} calls ${G}$2${Y} ${NC}"
 
 	adb -s "$(serial_of "$1")" shell am start -a android.intent.action.CALL \
-                -d tel:"$(number_of "$2")"
+                -d tel:"$(msisdn_of "$2")"
 
 	echo -e "${Y}	${B}[INPUT]${Y} does it ring? (no|ENTER)${NC}"
 	read does_it_ring
