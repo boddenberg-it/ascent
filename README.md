@@ -53,7 +53,6 @@ The following test cases and suites are available:
 * `./ascent.sh sms`
 * `./ascent.sh call`
 * `./ascent.sh data`
-
 * `/ascent.sh 2g`&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;(combines sms + call)
 * `/ascent.sh 3g`&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;(combines sms + call + data)
 
