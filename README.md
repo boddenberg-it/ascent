@@ -34,7 +34,9 @@ In order to run ascent two Android[4.4;7.1] devices with the following configura
 * disable any password/pattern to unlock            (swiping should unlock your phone)
 * no root required
 
-*Note: Some devices might need to be rooted to support verifying data connectivity!*
+*Notes:*
+* Some devices might need to be rooted to support verifying data connectivity!*
+* Keep in mind that ascent gets flaky the more notifications/UI-interruptions you have.
 
 Furthermore an adb daemon must be installed on your machine. In case one doesn't have adb already installed - no panic! One can install it via [android-tools-adb](https://packages.debian.org/jessie/android-tools-adb) debian package (also available for ARM, MIPS,...). Furthermore Google also provides [SDK Platform Tools](https://developer.android.com/studio/releases/platform-tools.html) for Linux, Windows and MacOS environments, so there's no need to download and install a fully-blown [Android SDK](https://developer.android.com/studio/index.html).
 
