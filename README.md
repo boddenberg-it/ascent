@@ -40,7 +40,7 @@ In order to run ascent two Android[4.4;7.1] devices with the following configura
 
 Furthermore an adb daemon must be installed on your machine. In case one doesn't have adb already installed - no panic! One can install it via [android-tools-adb](https://packages.debian.org/jessie/android-tools-adb) debian package (also available for ARM, MIPS,...). Furthermore Google also provides [SDK Platform Tools](https://developer.android.com/studio/releases/platform-tools.html) for Linux, Windows and MacOS environments, so there's no need to download and install a fully-blown [Android SDK](https://developer.android.com/studio/index.html).
 
-After both adb connections have been successfully established (RSA handshake), one need to simply clone ascent repo and change ascent.cfg to suite your setup. Just have a look at the default one to be able to apply mentioned changes or - for more information - read `./ascent -h`.
+After both adb connections have been successfully established (RSA handshake), you need to clone ascent repo and change ascent.cfg to suite your setup. Just have a look at the default one to be able to apply mentioned changes or - for more information - read `./ascent -h`.
 <br>
 
 ## Alright, Let's test!
