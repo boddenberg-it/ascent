@@ -35,7 +35,7 @@ In order to run ascent two Android[4.4;7.1] devices with the following configura
 * no root required
 
 *Notes:*
-* Some devices might need to be rooted to support verifying data connectivity!*
+* Some devices might need to be rooted to support verifying data connectivity!
 * Keep in mind that ascent gets flaky the more notifications/UI-interruptions you have.
 
 Furthermore an adb daemon must be installed on your machine. In case one doesn't have adb already installed - no panic! One can install it via [android-tools-adb](https://packages.debian.org/jessie/android-tools-adb) debian package (also available for ARM, MIPS,...). Furthermore Google also provides [SDK Platform Tools](https://developer.android.com/studio/releases/platform-tools.html) for Linux, Windows and MacOS environments, so there's no need to download and install a fully-blown [Android SDK](https://developer.android.com/studio/index.html).
@@ -74,9 +74,9 @@ source ascent.sh
 In **interactive mode** one can use above mentioned test cases and suites as well as some more granular test cases like:
 
 ```
-call d1 d0
+call d0 d1
 ```
-![console output of 'call d1 d0'](https://github.boddenberg.it/ascent/ascent_call_example.jpg)
+![console output of 'call d0 d1'](https://github.boddenberg.it/ascent/ascent_call_example.jpg)
 
 ```
 sms d1 d0
@@ -100,7 +100,7 @@ Furthermore functions are available to reset, unlock and debug phones via adb co
 
 ### What's next?
 
-The further development of ascent will probably be limited to bug fixes and handy interactive helpers, because using adb to intent a call, sms and there like can be quite flaky in fact of running as an UI Thread. That's why I rather consider spending time on an native Android application, which will do above stated in the background (thus independent from current UI Thread) than on improving ascent. Especially since an native Android application seems to allow test verification on devices itself e.g. SMS status report as pendingIntent, quering network_connection_type, signal strength,...
+The further development of ascent will probably be limited to bug fixes and handy interactive helpers, because using adb to intent a call or sms can be quite flaky in fact of running as an UI Thread. That's why I rather consider spending time on an native Android application, which will do above stated in the background (thus independent from current UI Thread) than on improving ascent. Especially since an native Android application seems to allow test verification on devices itself e.g. SMS status report as pendingIntent, quering network_connection_type, signal strength,...
 
 ### Hey, I've found a bug!
 
