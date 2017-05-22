@@ -26,19 +26,17 @@ alt="demo (low quality)"/></a>
 
 I want to point out again that ascent is designed to test R&D cellular network setups, e.g. [Osmocom](https://osmocom.org/) based ones. There is probably not much use in testing commercial cellular networks (MNOs) with ascent. Although MNOs will probably appreciate tests, where testers pay for their services.
 
-In order to run ascent two Android devices with the following configurations are necessary:
+In order to run ascent two Android[4.4;7.1] devices with the following configurations are necessary:
 
 * activate "developer options"
 * enable "stay awake" in "developer options"
 * install [SMS Messaging (AOSP)](https://play.google.com/store/apps/details?id=fr.slvn.mms) as default SMS app   (only a suggestion)
 * disable any password/pattern to unlock            (swiping should unlock your phone)
-
-* tested on Android 4.4, 6.0, 7.1
 * no root required
 
 *Note: Some devices might need to be rooted to support verifying data connectivity!*
 
-Furthermore an adb daemon must be installed on your machine. In case one doesn't have adb already installed - no panic! One can install it via [android-tools-adb](https://packages.debian.org/jessie/android-tools-adb) debian package (also available for ARM,MIPS,...). Furthermore Google also provides [SDK Platform Tools](https://developer.android.com/studio/releases/platform-tools.html) for Linux, Windows and MacOS environments, so there's no need to download and install a fully-blown [Android SDK](https://developer.android.com/studio/index.html).
+Furthermore an adb daemon must be installed on your machine. In case one doesn't have adb already installed - no panic! One can install it via [android-tools-adb](https://packages.debian.org/jessie/android-tools-adb) debian package (also available for ARM, MIPS,...). Furthermore Google also provides [SDK Platform Tools](https://developer.android.com/studio/releases/platform-tools.html) for Linux, Windows and MacOS environments, so there's no need to download and install a fully-blown [Android SDK](https://developer.android.com/studio/index.html).
 
 After both adb connections have been successfully established (RSA handshake), one need to simply clone ascent repo and change ascent.cfg to suite your setup. Just have a look at the default one to be able to apply mentioned changes or - for more information - read `./ascent -h`.
 <br>
