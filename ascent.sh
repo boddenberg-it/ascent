@@ -50,9 +50,10 @@ print_help() {
 }
 
 print_interactive_mode_banner() {
+	deco="${B}~${G}:${B}~${Y}"
 	echo -e "${Y}#################################################################"
 	echo -e "#                                                               #"
-	echo -e "#   ${B}~${G}:${B}~${Y}  ${R}A${GRAY}ndroid ${R}S${GRAY}emiautomated ${R}CE${GRAY}llular ${R}N${GRAY}etwork ${R}T${GRAY}esting${Y}  ${B}~${G}:${B}~${Y}    #"
+	echo -e "#   $deco  ${R}A${GRAY}ndroid ${R}S${GRAY}emiautomated ${R}CE${GRAY}llular ${R}N${GRAY}etwork ${R}T${GRAY}esting${Y}  $deco    #"
 	echo -e "#                                                               #"
 	echo -e "#  Ascent shall help testing cellular networks with 2 Android   #"
 	echo -e "#  devices by only ovserving them - no physical interaction.    #"
@@ -177,6 +178,7 @@ send_sms() {
 	adb -s "$(serial_of "$1")" shell input keyevent "$KEYCODE_DPAD_RIGHT"
 	sleep 0.2
 	adb -s "$(serial_of "$1")" shell input keyevent "$KEYCODE_ENTER"
+
 	go_to_homescreen
 	echo
 }
@@ -323,7 +325,7 @@ unlock_device() {
 
 # check whether global config file is available
 if [ -f ~/.ascent ]; then
-		export ASCENT_CONFIG=~/.ascent
+	export ASCENT_CONFIG=~/.ascent
 fi
 # Check whether config file is passed or user requests help?
 if [ "$1" = "-c" ]; then
