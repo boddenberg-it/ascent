@@ -1,5 +1,4 @@
 #!/bin/bash
-#
 # Simple script to allow some testing (mainly verifying config parsing).
 
 # colors
@@ -8,7 +7,7 @@ R="\033[0;31m"
 G="\033[0;32m"
 B="\033[0;35m"
 
-# counting all errors occuring in test run
+# counting all errors occuring in test suite
 errors=0
 
 test_case() {

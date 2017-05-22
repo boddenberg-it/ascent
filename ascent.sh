@@ -46,7 +46,7 @@ print_help() {
 	echo -e "#                                                               #"
 	echo -e "#  ${Y}More information on https://github.com/boddenberg-it/ascent${Y}  #"
 	echo -e "#                                                               #"
-  echo -e "#################################################################${NC}"
+	echo -e "#################################################################${NC}"
 }
 
 print_interactive_mode_banner() {
@@ -59,7 +59,7 @@ print_interactive_mode_banner() {
 	echo -e "#  It provides an adb-based CLI to call, send SMS and verify    #"
 	echo -e "#  data. Although \"tests\" still have to be manually verified.   #"
 	echo -e "#                                                               #"
-	echo -e "#  author:  André Boddenberg (ascent@boddenberg.it)             #"                                                          #"
+	echo -e "#  author:  André Boddenberg (ascent@boddenberg.it)             #"
 	echo -e "#  version: $ASCENT_VERSION                                                 #"
 	echo -e "#                                                               #"
 	if [ $# -gt 0 ]; then
@@ -172,7 +172,7 @@ send_sms() {
 		-d sms:"$(number_of "$2")" --es sms_body "test_intent" --ez exit_on_sent true
 
 	sleep 0.2
-  adb -s "$(serial_of "$1")" shell input text "test_input"
+  	adb -s "$(serial_of "$1")" shell input text "test_input"
 	sleep 0.2
 	adb -s "$(serial_of "$1")" shell input keyevent "$KEYCODE_DPAD_RIGHT"
 	sleep 0.2
@@ -237,7 +237,7 @@ call() {
 
 data() {
 	ping "$d0" 8.8.8.8
-  ping "$d1" 8.8.8.8
+  	ping "$d1" 8.8.8.8
 }
 
 2g() {
@@ -350,7 +350,7 @@ if [ $# -gt 0 ]; then
 	if [ $? -eq 0 ]; then
 		# Executing each test-case/suite sequentially.
 		for test in "$@"; do
-				$test
+			$test
 			# Abort if passed test-case/suite i.e. command, could not be found!
 			if [ $? -gt 0 ]; then
 				print_help
@@ -363,6 +363,6 @@ if [ $# -gt 0 ]; then
 	fi
 else
 	# interactive mode (only when sourced or invoked without test-case/suite)
-  print_interactive_mode_banner "interactive_mode"
+	print_interactive_mode_banner "interactive_mode"
 	sanity
 fi
