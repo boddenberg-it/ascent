@@ -103,26 +103,24 @@ sanity() {
 		return 1
 
 	else
+		echo
+		echo " [INFO] sourcing $ASCENT_CONFIG"
+		echo
+
 		source "$ASCENT_CONFIG"
 		missing=""
 
-		needed=(serial_0 \
-    		msisdn_0 \
-        name_0 \
-        serial_1 \
-        msisdn_1 \
-        name_1
-        )
+		if [ -z ${serial_0+x} ]; then missing="$missing serial_0"; fi
+		if [ -z ${msisdn_0+x} ]; then missing="$missing msisdn_0"; fi
+		if [ -z ${name_0+x} ]; then missing="$missing name_0"; fi
 
-		for need in "${needed[@]}"; do
-			if [ -z ${"$need"+x} ]; then missing="$missing $need"; fi
-		done
+		if [ -z ${serial_1+x} ]; then missing="$missing serial_1"; fi
+		if [ -z ${msisdn_1+x} ]; then missing="$missing msisdn_1"; fi
+		if [ -z ${name_1+x} ]; then missing="$missing name_1"; fi
 
 		if [ ${#missing} -gt 0 ]; then
 			echo
-			echo -e "${R}[ERROR] Config does not hold following information: "
-			echo
-			echo -e "      $missing${NC}"
+			echo -e "${R}[ERROR] Config does not hold following information: $missing${NC}"
 			echo
 		fi
 
@@ -130,9 +128,10 @@ sanity() {
 
 	echo -e "${Y}[SANITY_CHECK] are both devices connected?${NC}"
 	err_codes=0
-	adb devices | grep $serial_0
+	echo $serial_0
+	adb devices | grep "$serial_0"
 	err_codes=$((err_codes+$?))
-	adb devices | grep $serial_1
+	adb devices | grep "$serial_1"
 	err_codes=$((err_codes+$?))
 
 	if [ "$err_codes" -gt 0 ]; then
@@ -145,6 +144,32 @@ sanity() {
 	fi
 }
 
+
+# ADB WRAPPER
+adb_keyevent() {
+	adb -s "$1" shell input keyevent "$2"
+}
+
+adb_send_sms(){
+	adb -s "$1" shell am start -a android.intent.action.SENDTO \
+		-d sms "$2" --es sms_body "$3" --ez exit_on_sent true
+}
+
+adb_input_text() {
+	adb -s "$1" shell input text "$2"
+}
+
+adb_call() {
+	adb -s "$1" shell am start -a android.intent.action.CALL -d tel:"$2"
+}
+
+adb_ping() {
+		adb -s "$1" shell ping -c 3 "$2"
+}
+
+adb_swipe() {
+	adb -s "$1" shell input swipe "$2" "$3" "$4" "$5"
+}
 # TEST FUNCTIONS
 
 # send_sms passes text message already via intent, but additionally it sends
@@ -156,42 +181,41 @@ send_sms() {
 	go_to_homescreen
 	echo -e "$Y[TEST-SMS] ${G}$1${Y} sends SMS to ${G}$2${Y} ${NC}"
 
-	adb -s "$1" shell am start -a android.intent.action.SENDTO \
-		-d sms:"$2" --es sms_body "test_intent" --ez exit_on_sent true
-
+	# maybe allow passing text?
+	adb_send_sms "$1" "$2" "test_input"
 	sleep 0.2
-  adb -s "$1" shell input text "test_input"
+  adb_input_text "$1" "test_input"
 	sleep 0.2
-	adb -s "$1" shell input keyevent "$KEYCODE_DPAD_RIGHT"
+	adb_keyevent "$1" "$KEYCODE_DPAD_RIGHT"
 	sleep 0.2
-	adb -s "$1" shell input keyevent "$KEYCODE_ENTER"
+	adb_keyevent "$1" "$KEYCODE_ENTER"
 
 	go_to_homescreen
 	echo
 }
 
+
 do_call() {
 	go_to_homescreen
 	echo -e "${Y}[TEST-CALL] ${G}$1${Y} calls ${G}$2${Y} ${NC}"
 
-	adb -s "$1" shell am start -a android.intent.action.CALL \
-                -d tel:"$2"
+	adb_call "$1" "$2"
 
 	echo -e "${Y}	${B}[INPUT]${Y} does it ring? (no|ENTER)${NC}"
 	read does_it_ring
 
 	# REMOVE *"n"*
-	if [[ "$does_it_ring" == *"n"* ]]; then
+	if [[ "$does_it_ring" == *"no"* ]]; then
 		echo -e "${R} 	[ERROR] call could not be established! ${NC}"
 	else
 		echo -e "${Y}	[INFO] ${G}$2${Y} accepts call${NC}"
-		adb -s "$2" shell input keyevent "$KEYCODE_CALL"
+		adb_keyevent "$2" "$KEYCODE_CALL"
 
 		echo -e "${Y}	${B}[INPUT]${Y} enough of talking? ${NC}"
 		read
 
 		echo -e "${Y}	[INFO] ${G}$1${Y} ends call ${NC}"
-		adb -s "$1" shell  input keyevent "$KEYCODE_ENDCALL"
+		adb_keyevent "$1" "$KEYCODE_ENDCALL"
 	fi
 
 	go_to_homescreen
@@ -256,9 +280,9 @@ adb1() {
 
 # jumping to the home screen.
 go_to_homescreen() {
-	# TODO: add killing all opened activities :)
-	adb -s "$serial_0" shell input keyevent "$KEYCODE_HOME"
-	adb -s "$serial_1" shell input keyevent "$KEYCODE_HOME"
+	# TODO: add killing all opened activities...
+	adb_keyevent "$serial_0" "$KEYCODE_HOME"
+	adb_keyevent "$serial_1" "$KEYCODE_HOME"
 }
 
 # Some devices may require adb root access to ping.
@@ -266,10 +290,11 @@ go_to_homescreen() {
 ping() {
 	if [ "$1" = "d0" ]; then
 		echo -e "${Y}[TEST-DATA] ${G}$d0${Y} tries to ping ${G}$2${Y} ${NC}"
-		adb -s "$serial_0" shell ping -c 3 "$2"
+		adb_ping "$serial_0" "$2"
+
 	elif [ "$1" = "d1" ]; then
 		echo -e "${Y}[TEST-DATA] ${G}$d1${Y} tries to ping ${G}$2${Y} ${NC}"
-		adb -s "$serial_1" shell ping -c 3 "$2"
+		adb_ping "$serial_1" "$2"
 	fi
 }
 
@@ -283,6 +308,7 @@ unlock_device() {
 		echo -e "${R}[ERROR] You must specify which device (\$d0||\$d1) should be unlocked!"
 		echo
 		return 1
+
 	elif [ "$1" = "d0" ]; then
 		serial="$serial_0"
 	elif [ "$1" = "d1" ]; then
@@ -300,9 +326,9 @@ unlock_device() {
 	y1=$((height-20))
 	y2=$((height/2))
 
-	adb -s "$serial" shell input keyevent "$KEYCODE_POWER"
+	adb_keyevent "$serial" "$KEYCODE_POWER"
 	sleep 1
-	adb -s "$serial" shell input swipe "$x" "$y1" "$x" "$y2"
+	adb_swipe "$serial" "$x" "$y1" "$x" "$y2"
 }
 
 # INIT
