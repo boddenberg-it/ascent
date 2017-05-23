@@ -9,16 +9,20 @@ print_help() {
 	echo -e "#       ${R}1st)${Y} ${GRAY}./ascent.sh ${G}arg(s)${Y}                                 #"
 	echo -e "#       ${R}2nd)${Y} ${GRAY}source ascent.sh   ${B}(interactive mode)${Y}              #"
 	echo -e "#                                                               #"
-	echo -e "#  But first, one need to create a ascent.cfg file inside the   #"
-	echo -e "#  directory from which ascent is invoked/sourced or create     #"
-	echo -e "#  ~/.ascent holding following information:                     #"
-	echo -e "#                                                               #"
-	echo -e "#       ${GRAY}device_0=${G}<android_serial>${GRAY}=${G}<msisdn>${GRAY}=${G}<name>${Y}               #"
-	echo -e "#       ${GRAY}device_1=${G}<android_serial>${GRAY}=${G}<msisdn>${GRAY}=${G}<name>${Y}               #"
-	echo -e "#                                                               #"
-	echo -e "#  Alterantively, one can also pass config path as follows:     #"
-	echo -e "#                                                               #"                                                             #"
+	echo -e "#  But first, one need to create ascent.cfg file, which can     #"
+	echo -e "#  be placed in ~/.ascent or passed when invoking:              #"
+  echo -e "#                                                               #"
 	echo -e "#       ${GRAY}./ascent -c ${G}<path_to_config_file>${Y} ${G}arg(s)${Y}                #"
+	echo -e "#                                                               #"
+	echo -e "#  Following information need to be provided by config file:    #"
+	echo -e "#                                                               #"
+  echo -e "#       ${G}serial_0=05cd98e0f0fd7bc8${Y}                               #"
+  echo -e "#       ${G}msisdn_0=1234${Y}                                           #"
+  echo -e "#       ${G}name_0=s7${Y}                                               #"
+  echo -e "#                                                               #"
+  echo -e "#       ${G}serial_1=4ef2d43176795a51${Y}                               #"
+  echo -e "#       ${G}msisdn_1=5678${Y}                                           #"
+  echo -e "#       ${G}name_1=nexus6${Y}                                           #"
 	echo -e "#                                                               #"
 	echo -e "#  ${R}1st)${Y} When ascent.sh is invoked, one can pass several         #"
 	echo -e "#       of following arguments (tests suites/cases):            #"
@@ -34,7 +38,7 @@ print_help() {
 	echo -e "#           ${B}call ${G}d1 d0${Y}                                          #"
 	echo -e "#           ${B}ping ${G}d1 ${G}<IP|URL>${Y}                                    #"
 	echo -e "#                                                               #"
-	echo -e "#       Additionally, ascent provides some handy commands,      #"
+	echo -e "#       Furthermore, ascent provides some handy commands,       #"
 	echo -e "#       when tests failed and devices need to be debugged:      #"
 	echo -e "#                                                               #"
 	echo -e "#           ${B}help${Y}                                                #"
@@ -84,8 +88,7 @@ B="\033[0;35m"
 Y="\033[1;33m"
 GRAY="\033[0;37m"
 
-# default directory is the current working directory
-ASCENT_CONFIG="$(pwd)/ascent.cfg"
+ASCENT_CONFIG=""
 ASCENT_VERSION="0.1"
 
 sanity() {
@@ -122,6 +125,7 @@ sanity() {
 			echo
 			echo -e "${R}[ERROR] Config does not hold following information: $missing${NC}"
 			echo
+			return 1
 		fi
 
 	fi
@@ -144,7 +148,6 @@ sanity() {
 	fi
 }
 
-
 # ADB WRAPPER
 adb_keyevent() {
 	adb -s "$1" shell input keyevent "$2"
@@ -152,7 +155,7 @@ adb_keyevent() {
 
 adb_send_sms(){
 	adb -s "$1" shell am start -a android.intent.action.SENDTO \
-		-d sms "$2" --es sms_body "$3" --ez exit_on_sent true
+		-d sms:"$2" --es sms_body "$3" --ez exit_on_sent true
 }
 
 adb_input_text() {
@@ -224,7 +227,7 @@ do_call() {
 
 # TEST WRAPPER
 sms() {
-	if [ $# -gt 2 ]; then
+	if [ $# -eq 2 ]; then
 		if [ "$1" = "d0" ]; then
 			send_sms "$serial_0" "$msisdn_1"
 		else
@@ -251,8 +254,8 @@ call() {
 
 data() {
 	# remove 8.8.8.8
-	ping "$serial_0" 8.8.8.8
-	ping "$serial_1" 8.8.8.8
+	ping "d0" "8.8.8.8"
+	ping "d1" "8.8.8.8"
 }
 
 2g() {
@@ -337,7 +340,7 @@ unlock_device() {
 if [ -f ~/.ascent ]; then
 	export ASCENT_CONFIG=~/.ascent
 fi
-# Check whether config file is passed or user requests help?
+# Check whether config file is passed
 if [ "$1" = "-c" ]; then
 	# Simply export ASCENT_CONFIG. sanity() will take care about wrong configs.
 	export ASCENT_CONFIG="$2"
