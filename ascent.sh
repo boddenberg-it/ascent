@@ -68,21 +68,6 @@ print_interactive_mode_banner() {
 	fi
 }
 
-# Kind of OOP'ish approach to not care about whether serial or msisdn has to
-# be passed. Thus enabling a smooth interactive mode by only specifying $d0
-# or $d1 and not its serial or msisdn, which would look like:
-#
-#      $ source ascent.sh
-#      $ call $d0_serial $d1_msisdn
-
-msisdn_of() {
-	echo "$1" | cut -d "$DELIMITER" -f3
-}
-
-serial_of() {
-	echo "$1" | cut -d "$DELIMITER" -f2
-}
-
 # https://developer.android.com/reference/android/view/KeyEvent.html
 KEYCODE_HOME=3
 KEYCODE_CALL=5
@@ -99,17 +84,13 @@ B="\033[0;35m"
 Y="\033[1;33m"
 GRAY="\033[0;37m"
 
-# Feel free to change, but only one character is allowed in fact of using cut.
-# Remmber to allign config file accordingly after changing delimiter.
-DELIMITER="="
-
 # default directory is the current working directory
 ASCENT_CONFIG="$(pwd)/ascent.cfg"
 ASCENT_VERSION="0.1"
 
 sanity() {
 	echo
-	echo -e "${Y}[SANITY_CHECK] can config be found?${NC}"
+	echo -e "${Y}[SANITY_CHECK] does config exist?${NC}"
 
 	if [ ! -f "$ASCENT_CONFIG" ]; then
 		echo
@@ -120,32 +101,38 @@ sanity() {
 		echo
 		export ASCENT_CONFIG=""
 		return 1
+
 	else
-		# parsing config
-		d0="$(grep device_0= "$ASCENT_CONFIG" )"
-		d1="$(grep device_1= "$ASCENT_CONFIG")"
-		# check (unprecisely) whether d0 and d1 hold "enough" information
-		if [ ${#d0} -gt 20 ] && [ ${#d1} -gt 20 ]; then
-			echo -e "${G}[INFO] config $ASCENT_CONFIG has been parsed:${NC}"
-			cat "$ASCENT_CONFIG"
+		source "$ASCENT_CONFIG"
+		missing=""
+
+		needed=(serial_0 \
+    		msisdn_0 \
+        name_0 \
+        serial_1 \
+        msisdn_1 \
+        name_1
+        )
+
+		for need in "${needed[@]}"; do
+			if [ -z ${"$need"+x} ]; then missing="$missing $need"; fi
+		done
+
+		if [ ${#missing} -gt 0 ]; then
 			echo
-		else
+			echo -e "${R}[ERROR] Config does not hold following information: "
 			echo
-			echo -e "${R}[ERROR] content of config file seems corrupted, thus it could"
-			echo -e "        not been parsed. Content of config file:${NC}"
-			cat "$ASCENT_CONFIG"
+			echo -e "      $missing${NC}"
 			echo
-			echo -e "${Y}config path: $ASCENT_CONFIG${Y}"
-			echo
-			return 1
 		fi
+
 	fi
 
 	echo -e "${Y}[SANITY_CHECK] are both devices connected?${NC}"
 	err_codes=0
-	adb devices | grep "$(serial_of "$d0")"
+	adb devices | grep $serial_0
 	err_codes=$((err_codes+$?))
-	adb devices | grep "$(serial_of "$d1")"
+	adb devices | grep $serial_1
 	err_codes=$((err_codes+$?))
 
 	if [ "$err_codes" -gt 0 ]; then
@@ -169,15 +156,15 @@ send_sms() {
 	go_to_homescreen
 	echo -e "$Y[TEST-SMS] ${G}$1${Y} sends SMS to ${G}$2${Y} ${NC}"
 
-	adb -s "$(serial_of "$1")" shell am start -a android.intent.action.SENDTO \
-		-d sms:"$(msisdn_of "$2")" --es sms_body "test_intent" --ez exit_on_sent true
+	adb -s "$1" shell am start -a android.intent.action.SENDTO \
+		-d sms:"$2" --es sms_body "test_intent" --ez exit_on_sent true
 
 	sleep 0.2
-  	adb -s "$(serial_of "$1")" shell input text "test_input"
+  adb -s "$1" shell input text "test_input"
 	sleep 0.2
-	adb -s "$(serial_of "$1")" shell input keyevent "$KEYCODE_DPAD_RIGHT"
+	adb -s "$1" shell input keyevent "$KEYCODE_DPAD_RIGHT"
 	sleep 0.2
-	adb -s "$(serial_of "$1")" shell input keyevent "$KEYCODE_ENTER"
+	adb -s "$1" shell input keyevent "$KEYCODE_ENTER"
 
 	go_to_homescreen
 	echo
@@ -187,23 +174,24 @@ do_call() {
 	go_to_homescreen
 	echo -e "${Y}[TEST-CALL] ${G}$1${Y} calls ${G}$2${Y} ${NC}"
 
-	adb -s "$(serial_of "$1")" shell am start -a android.intent.action.CALL \
-                -d tel:"$(msisdn_of "$2")"
+	adb -s "$1" shell am start -a android.intent.action.CALL \
+                -d tel:"$2"
 
 	echo -e "${Y}	${B}[INPUT]${Y} does it ring? (no|ENTER)${NC}"
 	read does_it_ring
 
+	# REMOVE *"n"*
 	if [[ "$does_it_ring" == *"n"* ]]; then
 		echo -e "${R} 	[ERROR] call could not be established! ${NC}"
 	else
 		echo -e "${Y}	[INFO] ${G}$2${Y} accepts call${NC}"
-		adb -s "$(serial_of "$2")" shell input keyevent "$KEYCODE_CALL"
+		adb -s "$2" shell input keyevent "$KEYCODE_CALL"
 
 		echo -e "${Y}	${B}[INPUT]${Y} enough of talking? ${NC}"
 		read
 
 		echo -e "${Y}	[INFO] ${G}$1${Y} ends call ${NC}"
-		adb -s "$(serial_of "$1")" shell  input keyevent "$KEYCODE_ENDCALL"
+		adb -s "$1" shell  input keyevent "$KEYCODE_ENDCALL"
 	fi
 
 	go_to_homescreen
@@ -212,34 +200,35 @@ do_call() {
 
 # TEST WRAPPER
 sms() {
-	if [ $# -eq 2 ]; then
+	if [ $# -gt 2 ]; then
 		if [ "$1" = "d0" ]; then
-			send_sms "$d0" "$d1"
+			send_sms "$serial_0" "$msisdn_1"
 		else
-			send_sms "$d1" "$d0"
+			send_sms "$serial_1" "$msisdn_0"
 		fi
 	else
-		send_sms "$d0" "$d1"
-		send_sms "$d1" "$d0"
+		send_sms "$serial_0" "$msisdn_1"
+		send_sms "$serial_1" "$msisdn_0"
 	fi
 }
 
 call() {
-	if [ $# -eq 2 ]; then
+	if [ $# -gt 2 ]; then
 		if [ "$1" = "d0" ]; then
-			do_call "$d0" "$d1"
+			do_call "$serial_0" "$msisdn_1"
 		else
-			do_call "$d1" "$d0"
+			do_call "$serial_1" "$msisdn_0"
 		fi
 	else
-		do_call "$d0" "$d1"
-		do_call "$d1" "$d0"
+		do_call "$serial_0" "$msisdn_1"
+		do_call "$serial_1" "$msisdn_0"
 	fi
 }
 
 data() {
-	ping "$d0" 8.8.8.8
-  	ping "$d1" 8.8.8.8
+	# remove 8.8.8.8
+	ping "$serial_0" 8.8.8.8
+	ping "$serial_1" 8.8.8.8
 }
 
 2g() {
@@ -253,23 +242,23 @@ data() {
 }
 
 # INTERACTIVE MODE HELPER FUNCTIONS
+help() {
+	print_help
+}
+
 adb0() {
-	adb -s "$(serial_of "$d0")" "$@"
+	adb -s "$serial_0" "$@"
 }
 
 adb1() {
-	adb -s "$(serial_of "$d1")" "$@"
+	adb -s "$serial_1" "$@"
 }
 
 # jumping to the home screen.
 go_to_homescreen() {
 	# TODO: add killing all opened activities :)
-	adb -s "$(serial_of "$d0")" shell input keyevent "$KEYCODE_HOME"
-	adb -s "$(serial_of "$d1")" shell input keyevent "$KEYCODE_HOME"
-}
-
-help() {
-	print_help
+	adb -s "$serial_0" shell input keyevent "$KEYCODE_HOME"
+	adb -s "$serial_1" shell input keyevent "$KEYCODE_HOME"
 }
 
 # Some devices may require adb root access to ping.
@@ -277,21 +266,17 @@ help() {
 ping() {
 	if [ "$1" = "d0" ]; then
 		echo -e "${Y}[TEST-DATA] ${G}$d0${Y} tries to ping ${G}$2${Y} ${NC}"
-		adb -s "$(serial_of "$d0")" shell ping -c 3 "$2"
+		adb -s "$serial_0" shell ping -c 3 "$2"
 	elif [ "$1" = "d1" ]; then
 		echo -e "${Y}[TEST-DATA] ${G}$d1${Y} tries to ping ${G}$2${Y} ${NC}"
-		adb -s "$(serial_of "$d1")" shell ping -c 3 "$2"
-	else
-		echo -e "${Y}[TEST-DATA] ${G}$1${Y} tries to ping ${G}$2${Y} ${NC}"
-		adb -s "$(serial_of "$1")" shell ping -c 3 "$2"
+		adb -s "$serial_1" shell ping -c 3 "$2"
 	fi
-	echo
 }
 
 # unlock_device() expects that there is no password or pattern to unlock the phone.
 # A straight swipe from bottom to center should unlock the phone.
 unlock_device() {
-	device=""
+	serial=""
 
 	if [ $# -ne 1 ]; then
 		echo
@@ -299,13 +284,12 @@ unlock_device() {
 		echo
 		return 1
 	elif [ "$1" = "d0" ]; then
-		echo d0
-		device="$d0"
+		serial="$serial_0"
 	elif [ "$1" = "d1" ]; then
-		device="$d1"
+		serial="$serial_1"
 	fi
 
-	screen_res="$(adb -s "$(serial_of "$device")" shell dumpsys display | grep deviceWidth \
+	screen_res="$(adb -s "$serial" shell dumpsys display | grep deviceWidth \
 		| awk -F"deviceWidth=" '{print $2}' | head -n 1)"
 
 	width="$(echo "$screen_res" | cut -d ',' -f1)"
@@ -316,9 +300,9 @@ unlock_device() {
 	y1=$((height-20))
 	y2=$((height/2))
 
-	adb -s "$(serial_of "$device")" shell input keyevent "$KEYCODE_POWER"
+	adb -s "$serial" shell input keyevent "$KEYCODE_POWER"
 	sleep 1
-	adb -s "$(serial_of "$device")" shell input swipe "$x" "$y1" "$x" "$y2"
+	adb -s "$serial" shell input swipe "$x" "$y1" "$x" "$y2"
 }
 
 # INIT
