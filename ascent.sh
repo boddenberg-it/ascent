@@ -11,18 +11,18 @@ print_help() {
 	echo -e "#                                                               #"
 	echo -e "#  But first, one need to create ascent.cfg file, which can     #"
 	echo -e "#  be placed in ~/.ascent or passed when invoking:              #"
-  echo -e "#                                                               #"
+	echo -e "#                                                               #"
 	echo -e "#       ${GRAY}./ascent -c ${G}<path_to_config_file>${Y} ${G}arg(s)${Y}                #"
 	echo -e "#                                                               #"
 	echo -e "#  Following information need to be provided by config file:    #"
 	echo -e "#                                                               #"
-  echo -e "#       ${G}serial_0=05cd98e0f0fd7bc8${Y}                               #"
-  echo -e "#       ${G}msisdn_0=1234${Y}                                           #"
-  echo -e "#       ${G}name_0=s7${Y}                                               #"
-  echo -e "#                                                               #"
-  echo -e "#       ${G}serial_1=4ef2d43176795a51${Y}                               #"
-  echo -e "#       ${G}msisdn_1=5678${Y}                                           #"
-  echo -e "#       ${G}name_1=nexus6${Y}                                           #"
+	echo -e "#       ${G}serial_0=05cd98e0f0fd7bc8${Y}                               #"
+	echo -e "#       ${G}msisdn_0=1234${Y}                                           #"
+	echo -e "#       ${G}name_0=s7${Y}                                               #"
+	echo -e "#                                                               #"
+	echo -e "#       ${G}serial_1=4ef2d43176795a51${Y}                               #"
+	echo -e "#       ${G}msisdn_1=5678${Y}                                           #"
+	echo -e "#       ${G}name_1=nexus6${Y}                                           #"
 	echo -e "#                                                               #"
 	echo -e "#  ${R}1st)${Y} When ascent.sh is invoked, one can pass several         #"
 	echo -e "#       of following arguments (tests suites/cases):            #"
@@ -107,7 +107,8 @@ sanity() {
 
 	else
 		echo
-		echo " [INFO] sourcing $ASCENT_CONFIG"
+		echo -e "${Y}[INFO] sourcing $ASCENT_CONFIG${NC}"
+		cat "$ASCENT_CONFIG"
 		echo
 
 		source "$ASCENT_CONFIG"
@@ -167,7 +168,7 @@ adb_call() {
 }
 
 adb_ping() {
-		adb -s "$1" shell ping -c 3 "$2"
+	adb -s "$1" shell ping -c 3 "$2"
 }
 
 adb_swipe() {
@@ -187,7 +188,7 @@ send_sms() {
 	# maybe allow passing text?
 	adb_send_sms "$1" "$2" "test_input"
 	sleep 0.2
-  adb_input_text "$1" "test_input"
+	adb_input_text "$1" "test_input"
 	sleep 0.2
 	adb_keyevent "$1" "$KEYCODE_DPAD_RIGHT"
 	sleep 0.2

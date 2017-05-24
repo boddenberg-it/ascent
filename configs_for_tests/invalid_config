@@ -1,2 +1,7 @@
-This is an invalid config file
-4df1d42174585f61=001=s3
+
+# device 0
+serial_0=foo
+name_0=bar
+
+# device 1
+name_1=s3
