@@ -131,6 +131,7 @@ sanity() {
 
 	fi
 
+	# TODO: try grepp
 	echo -e "${Y}[SANITY_CHECK] are both devices connected?${NC}"
 	err_codes=0
 	echo $serial_0
@@ -167,8 +168,21 @@ adb_call() {
 	adb -s "$1" shell am start -a android.intent.action.CALL -d tel:"$2"
 }
 
+# TODO: ping -c $3 optional
 adb_ping() {
-	adb -s "$1" shell ping -c 3 "$2"
+
+		if [ ! -z ${3+x} ]; then ping_count="$3"; fi
+
+		device_buffer="/storage/self/primary/ascent"
+		# freaky string, because two commands can only be passed to adb shell at
+		# once within single quotes, but passing URL and ping count is necessary.
+		cmd='ping -c '"$ping_count"' '"$2"' 2&>1 > '"$device_buffer"'; echo $?'
+
+		err=$(adb_shell $1 $cmd)
+		adb -s "$1" shell cat "$device_buffer"
+
+	  # unfortunately $err is not a numeric argument
+		if [ "$err" = "0" ]; then return 1; fi
 }
 
 adb_swipe() {
@@ -291,16 +305,16 @@ go_to_homescreen() {
 
 # Some devices may require adb root access to ping.
 # ping() is used by "data" test-wrapper.
-ping() {
-	if [ "$1" = "d0" ]; then
-		echo -e "${Y}[TEST-DATA] ${G}$d0${Y} tries to ping ${G}$2${Y} ${NC}"
-		adb_ping "$serial_0" "$2"
-
-	elif [ "$1" = "d1" ]; then
-		echo -e "${Y}[TEST-DATA] ${G}$d1${Y} tries to ping ${G}$2${Y} ${NC}"
-		adb_ping "$serial_1" "$2"
-	fi
-}
+#ping() {
+#	if [ "$1" = "d0" ]; then
+#		echo -e "${Y}[TEST-DATA] ${G}$d0${Y} tries to ping ${G}$2${Y} ${NC}"
+#		adb_ping "$serial_0" "$2"
+#
+#	elif [ "$1" = "d1" ]; then
+#		echo -e "${Y}[TEST-DATA] ${G}$d1${Y} tries to ping ${G}$2${Y} ${NC}"
+#		adb_ping "$serial_1" "$2"
+#	fi
+#}
 
 # unlock_device() expects that there is no password or pattern to unlock the phone.
 # A straight swipe from bottom to center should unlock the phone.
