@@ -57,8 +57,6 @@ print_interactive_mode_banner() {
 	deco="${B}~${G}:${B}~${Y}"
 	echo -e "${Y}#################################################################"
 	echo -e "#                                                               #"
-	echo -e "#   $deco  ${R}A${GRAY}ndroid ${R}S${GRAY}emiautomated ${R}CE${GRAY}llular ${R}N${GRAY}etwork ${R}T${GRAY}esting${Y}  $deco    #"
-	echo -e "#                                                               #"
 	echo -e "#  Ascent shall help testing cellular networks with 2 Android   #"
 	echo -e "#  devices by only ovserving them - no physical interaction.    #"
 	echo -e "#  It provides an adb-based CLI to call, send SMS and verify    #"
@@ -131,16 +129,15 @@ sanity() {
 
 	fi
 
-	# TODO: try grepp
 	echo -e "${Y}[SANITY_CHECK] are both devices connected?${NC}"
 	err_codes=0
-	echo $serial_0
 	adb devices | grep "$serial_0"
 	err_codes=$((err_codes+$?))
 	adb devices | grep "$serial_1"
 	err_codes=$((err_codes+$?))
 
 	if [ "$err_codes" -gt 0 ]; then
+		echo
 		echo -e "${R}[ERROR] not both devices are connected!${NC}"
 		echo
 		return 1
