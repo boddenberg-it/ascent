@@ -154,7 +154,14 @@ adb_keyevent() {
 
 adb_send_sms(){
 	adb -s "$1" shell am start -a android.intent.action.SENDTO \
-		-d sms:"$2" --es sms_body "$3" --ez exit_on_sent true
+		-d sms:"$2" --es sms_body "intent_text" --ez exit_on_sent true
+
+	sleep 0.2
+	adb_input_text "$1" "input_text"
+	sleep 0.2
+	adb_keyevent "$1" "$KEYCODE_DPAD_RIGHT"
+	sleep 0.2
+	adb_keyevent "$1" "$KEYCODE_ENTER"
 }
 
 adb_input_text() {
@@ -199,16 +206,9 @@ adb_clear_logcat() {
 # Note: The SMS Messaging (AOSP) app works best with ascent.sh
 send_sms() {
 	go_to_homescreen
-	echo -e "$Y[TEST-SMS] ${G}$1${Y} sends SMS to ${G}$2${Y} ${NC}"
 
-	# maybe allow passing text?
+	echo -e "$Y[TEST-SMS] ${G}$1${Y} sends SMS to ${G}$2${Y} ${NC}"
 	adb_send_sms "$1" "$2" "test_input"
-	sleep 0.2
-	adb_input_text "$1" "test_input"
-	sleep 0.2
-	adb_keyevent "$1" "$KEYCODE_DPAD_RIGHT"
-	sleep 0.2
-	adb_keyevent "$1" "$KEYCODE_ENTER"
 
 	go_to_homescreen
 	echo
@@ -225,7 +225,7 @@ do_call() {
 	read does_it_ring
 
 	# REMOVE *"n"*
-	if [[ "$does_it_ring" == *"no"* ]]; then
+	if [[ "$does_it_ring" == *"no" ]]; then
 		echo -e "${R} 	[ERROR] call could not be established! ${NC}"
 	else
 		echo -e "${Y}	[INFO] ${G}$2${Y} accepts call${NC}"
