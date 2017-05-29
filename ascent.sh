@@ -188,6 +188,11 @@ adb_ping() {
 adb_swipe() {
 	adb -s "$1" shell input swipe "$2" "$3" "$4" "$5"
 }
+
+adb_clear_logcat() {
+    adb -s "$1" logcat -c
+}
+
 # TEST FUNCTIONS
 
 # send_sms passes text message already via intent, but additionally it sends
