@@ -152,6 +152,7 @@ adb_keyevent() {
 	adb -s "$1" shell input keyevent "$2"
 }
 
+# Note: SMS Messaging (AOSP) app is required!
 adb_send_sms(){
 	adb -s "$1" shell am start -a android.intent.action.SENDTO \
 		-d sms:"$2" --es sms_body "intent_text" --ez exit_on_sent true
@@ -194,7 +195,69 @@ adb_swipe() {
 }
 
 adb_clear_logcat() {
-    adb -s "$1" logcat -c
+		# TODO: introduce d0 d1
+		if [ $# -eq 1 ]; then
+    	adb -s "$1" logcat -c
+		else
+			adb -s "$serial_0" logcat -c
+			adb -s "$serial_1" logcat -c
+		fi
+}
+
+adb_grep_logcat() {
+
+	timeout=$(date +%s)
+
+	# default or passed timeout
+	if [ ${3+z} ]; then
+		timeout=$((timeout+$3))
+	else
+		# (recommended) default timeout of 15 s
+		timeout=$((timeout+15))
+	fi
+
+	while [ "$(date +%s)" -lt "$timeout" ]; do
+		# -d is necessary, because otherwise adb does not terminate on its own.
+		adb -s "$1" logcat -d > "logcat_$1.txt"
+
+		if grep -E "$2" < logcat_$1.txt; then
+			echo "$(grep -E "$2" < logcat_$1.txt | wc -l)"
+			rm "logcat_$1.txt"
+			return 0;
+		fi
+
+	done
+
+	rm "logcat_$1.txt"
+	return 1
+}
+
+# TODO: get rid of this function and use only adb_grep_logcat!!!
+#				only needed for send_sms' sms request verification to CN. :/
+adb_grep_logcat_twice() {
+	timeout=$(date +%s)
+
+	# default or passed timeout
+	if [ ${3+z} ]; then
+		timeout=$((timeout+$3))
+	else
+		# (recommended) default timeout of 15 s
+		timeout=$((timeout+15))
+	fi
+
+	while [ "$(date +%s)" -lt "$timeout" ]; do
+		# -d is necessary, because otherwise adb does not terminate on its own.
+		adb -s "$1" logcat -d > "logcat_$1.txt"
+
+		if [ $(grep -E "$2" < logcat_$1.txt | wc -l) -eq 2 ]; then
+			rm "logcat_$1.txt"
+			return 0;
+		fi
+
+	done
+
+	rm "logcat_$1.txt"
+	return 1
 }
 
 # TEST FUNCTIONS
@@ -206,9 +269,39 @@ adb_clear_logcat() {
 # Note: The SMS Messaging (AOSP) app works best with ascent.sh
 send_sms() {
 	go_to_homescreen
+	adb_clear_logcat
 
 	echo -e "$Y[TEST-SMS] ${G}$1${Y} sends SMS to ${G}$2${Y} ${NC}"
 	adb_send_sms "$1" "$2" "test_input"
+
+	# verification that SMS request could be sent(?)
+	if adb_grep_logcat "$1" ".*Mms.*onStart:.*mResultCode: -1 = Activity.RESULT_OK"; then
+			echo -e "$Y[INFO] ${G}$1${Y} tries to send SMS to CN... ${NC}"
+	else
+			echo -e "${R}[TIMEOUT] ${G}$1${Y} SMS could not be send (yet) ${G}$2${Y} ${NC}"
+			go_to_homescreen
+			return 1
+	fi
+
+	# verification that SMS request could be sent(?)
+	if adb_grep_logcat_twice "$1" ".*Mms.*onStart:.*mResultCode: -1 = Activity.RESULT_OK"; then
+			echo -e "$Y[INFO] ${G}$1${Y} successfully sends SMS to CN ${NC}"
+	else
+			echo -e "${R}[TIMEOUT] ${G}$1${Y} SMS could not be send (yet) ${G}$2${Y} ${NC}"
+			go_to_homescreen
+			return 1
+	fi
+
+	# verifying that reciever received SMS
+	if adb_grep_logcat "$3" "handleSmsReceived"; then
+		echo -e "$Y[INFO] ${G}$3${Y} received SMS of $1 ${NC}"
+	else
+		echo -e "${R}[TIMEOUT] ${G}$1${Y} SMS could not be received (yet) ${G}$2${Y} ${NC}"
+		go_to_homescreen
+		return 1
+	fi
+
+	# print everything OSSOM!
 
 	go_to_homescreen
 	echo
@@ -243,13 +336,13 @@ do_call() {
 sms() {
 	if [ $# -eq 2 ]; then
 		if [ "$1" = "d0" ]; then
-			send_sms "$serial_0" "$msisdn_1"
+			send_sms "$serial_0" "$msisdn_1" "$serial_1"
 		else
-			send_sms "$serial_1" "$msisdn_0"
+			send_sms "$serial_1" "$msisdn_0" "$serial_0"
 		fi
 	else
-		send_sms "$serial_0" "$msisdn_1"
-		send_sms "$serial_1" "$msisdn_0"
+		send_sms "$serial_0" "$msisdn_1" "$serial_1"
+		send_sms "$serial_1" "$msisdn_0" "$serial_0"
 	fi
 }
 
