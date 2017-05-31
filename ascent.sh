@@ -214,7 +214,6 @@ send_sms() {
 	echo
 }
 
-
 do_call() {
 	go_to_homescreen
 	echo -e "${Y}[TEST-CALL] ${G}$1${Y} calls ${G}$2${Y} ${NC}"
@@ -224,12 +223,11 @@ do_call() {
 	echo -e "${Y}	${B}[INPUT]${Y} does it ring? (no|ENTER)${NC}"
 	read does_it_ring
 
-	# REMOVE *"n"*
 	if [[ "$does_it_ring" == *"no" ]]; then
 		echo -e "${R} 	[ERROR] call could not be established! ${NC}"
 	else
 		echo -e "${Y}	[INFO] ${G}$2${Y} accepts call${NC}"
-		adb_keyevent "$2" "$KEYCODE_CALL"
+		adb_keyevent "$3" "$KEYCODE_CALL"
 
 		echo -e "${Y}	${B}[INPUT]${Y} enough of talking? ${NC}"
 		read
@@ -239,7 +237,6 @@ do_call() {
 	fi
 
 	go_to_homescreen
-	echo
 }
 
 # TEST WRAPPER
@@ -257,15 +254,15 @@ sms() {
 }
 
 call() {
-	if [ $# -gt 2 ]; then
+	if [ $# -eq 2 ]; then
 		if [ "$1" = "d0" ]; then
-			do_call "$serial_0" "$msisdn_1"
+			do_call "$serial_0" "$msisdn_1" "$serial_1"
 		else
-			do_call "$serial_1" "$msisdn_0"
+			do_call "$serial_1" "$msisdn_0" "$serial_0"
 		fi
 	else
-		do_call "$serial_0" "$msisdn_1"
-		do_call "$serial_1" "$msisdn_0"
+		do_call "$serial_0" "$msisdn_1" "$serial_1"
+		do_call "$serial_1" "$msisdn_0" "$serial_0"
 	fi
 }
 
