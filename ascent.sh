@@ -176,18 +176,17 @@ adb_call() {
 # TODO: ping -c $3 optional
 adb_ping() {
 
-		if [ ! -z ${3+x} ]; then ping_count="$3"; fi
+	ping_count=3
+	if [ ! -z ${3+x} ]; then ping_count="$3"; fi
 
-		device_buffer="/storage/self/primary/ascent"
-		# freaky string, because two commands can only be passed to adb shell at
-		# once within single quotes, but passing URL and ping count is necessary.
-		cmd='ping -c '"$ping_count"' '"$2"' 2&>1 > '"$device_buffer"'; echo $?'
+	# freaky string, because two commands can only be passed to adb shell at
+	# once within single quotes, but passing URL and ping count is necessary.
+  output=$(adb -s $1 shell 'ping -c '"$ping_count"' '"$2"'; echo $?')
 
-		err=$(adb_shell $1 $cmd)
-		adb -s "$1" shell cat "$device_buffer"
+	# verbose-mode(?)
+	echo $output
 
-	  # unfortunately $err is not a numeric argument
-		if [ "$err" = "0" ]; then return 1; fi
+	if [[ $(echo $output | tail -1) != *"0"* ]]; then return 1; fi
 }
 
 adb_swipe() {
@@ -360,9 +359,25 @@ call() {
 }
 
 data() {
-	# remove 8.8.8.8
-	ping "d0" "8.8.8.8"
-	ping "d1" "8.8.8.8"
+	test_ping $serial_0 8.8.8.8
+	test_ping $serial_1 8.8.8.8
+}
+
+test_ping() {
+	echo -e "${Y}[TEST-DATA] ${G}$1${Y} tries to ping ${G}$2${Y} ${NC}"
+
+	if [ $# -eq 3 ]; then
+		adb_ping "$1" "$2" "$3"
+	else
+		adb_ping "$1" "$2"
+	fi
+
+	if [ $? -eq 0 ]; then
+		echo -e "${G}[TEST-DATA] SUCCESS ${NC}"
+	else
+		echo -e "${R}[TEST-DATA] FAILURE ${NC}"
+	fi
+	echo
 }
 
 2g() {
@@ -394,19 +409,6 @@ go_to_homescreen() {
 	adb_keyevent "$serial_0" "$KEYCODE_HOME"
 	adb_keyevent "$serial_1" "$KEYCODE_HOME"
 }
-
-# Some devices may require adb root access to ping.
-# ping() is used by "data" test-wrapper.
-#ping() {
-#	if [ "$1" = "d0" ]; then
-#		echo -e "${Y}[TEST-DATA] ${G}$d0${Y} tries to ping ${G}$2${Y} ${NC}"
-#		adb_ping "$serial_0" "$2"
-#
-#	elif [ "$1" = "d1" ]; then
-#		echo -e "${Y}[TEST-DATA] ${G}$d1${Y} tries to ping ${G}$2${Y} ${NC}"
-#		adb_ping "$serial_1" "$2"
-#	fi
-#}
 
 # unlock_device() expects that there is no password or pattern to unlock the phone.
 # A straight swipe from bottom to center should unlock the phone.
