@@ -54,7 +54,6 @@ print_help() {
 }
 
 print_interactive_mode_banner() {
-	deco="${B}~${G}:${B}~${Y}"
 	echo -e "${Y}#################################################################"
 	echo -e "#                                                               #"
 	echo -e "#  Ascent shall help testing cellular networks with 2 Android   #"
@@ -86,7 +85,7 @@ B="\033[0;35m"
 Y="\033[1;33m"
 GRAY="\033[0;37m"
 
-ASCENT_CONFIG=""
+# ASCENT_CONFIG="" check if something crashes, but shouldn't
 ASCENT_VERSION="0.1"
 
 sanity() {
@@ -203,6 +202,26 @@ adb_clear_logcat() {
 		fi
 }
 
+# 0 nothing, 1 gets called, 2 is calling
+adb_check_callState() {
+
+	timeout=$(date +%s)
+
+	# default or passed timeout
+	if [ ${3+z} ]; then
+		timeout=$((timeout+$3))
+	else
+		timeout=$((timeout+25))
+	fi
+
+	while [ "$(date +%s)" -lt "$timeout" ]; do
+		cs=$(adb -s $1 shell dumpsys telephony.registry | grep "mCallState=$2")
+		if [ ${#cs} -gt 0 ]; then return 0; fi
+	done
+
+	return 1
+}
+
 adb_grep_logcat() {
 
 	timeout=$(date +%s)
@@ -307,6 +326,41 @@ send_sms() {
 }
 
 do_call() {
+	go_to_homescreen
+	echo -e "\n${Y}[TEST-CALL] ${G}$1${Y} calls ${G}$2${Y} ${NC}"
+
+	adb_call "$1" "$2"
+
+	# verification that SMS request could be sent(?)
+	if adb_check_callState "$1" "2"; then
+		echo "INFO call intent successful"
+	else
+		echo "ERROR call intent failed"
+		if adb_check_callState "$1" "2"; then
+				adb_keyevent "$1" "$KEYCODE_ENDCALL"
+		fi
+		go_to_homescreen
+		return 1
+	fi
+
+	if adb_check_callState "$3" "1"; then
+		echo -e "${Y}	[INFO] ${G}$2${Y} accepts call${NC}"
+		adb_keyevent "$3" "$KEYCODE_CALL"
+	else
+			echo -e "${R}[TIMEOUT] call could not be established${NC}"
+			go_to_homescreen
+			return 1
+	fi
+
+	# holding line
+	sleep 3
+
+	echo -e "${Y}	[INFO] ${G}$1${Y} ends call ${NC}"
+	adb_keyevent "$1" "$KEYCODE_ENDCALL"
+	go_to_homescreen
+}
+
+do_icall() {
 	go_to_homescreen
 	echo -e "${Y}[TEST-CALL] ${G}$1${Y} calls ${G}$2${Y} ${NC}"
 
