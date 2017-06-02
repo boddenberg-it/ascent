@@ -22,6 +22,7 @@ log_error() {
 }
 
 init_test() {
+	adb_clear_logcat
 	go_to_homescreen
 	echo -e "\n${Y}[TEST-$1] $2 ${NC}"
 }
@@ -161,12 +162,12 @@ adb_shell() {
 }
 
 adb_keyevent() {
-	adb -s "$1" shell input keyevent "$2"
+	adb_shell "$1" input keyevent "$2"
 }
 
 # Note: SMS Messaging (AOSP) app is required!
 adb_send_sms(){
-	adb -s "$1" shell am start -a android.intent.action.SENDTO \
+	adb_shell "$1" am start -a android.intent.action.SENDTO \
 		-d sms:"$2" --es sms_body "intent_text" --ez exit_on_sent true
 
 	sleep 0.2
@@ -178,11 +179,11 @@ adb_send_sms(){
 }
 
 adb_input_text() {
-	adb -s "$1" shell input text "$2"
+	adb_shell "$1" input text "$2"
 }
 
 adb_call() {
-	adb -s "$1" shell am start -a android.intent.action.CALL -d tel:"$2"
+	adb_shell "$1" am start -a android.intent.action.CALL -d tel:"$2"
 }
 
 adb_ping() {
@@ -192,22 +193,22 @@ adb_ping() {
 
 	# freaky string, because two commands can only be passed to adb shell at
 	# once within single quotes, but passing URL and ping count is necessary.
-  output=$(adb -s $1 shell 'ping -c '"$ping_count"' '"$2"'; echo $?')
+  output=$(adb_shell $1 'ping -c '"$ping_count"' '"$2"'; echo $?')
 
 	if [[ $(echo $output | tail -1) != *"0"* ]]; then return 1; fi
 }
 
 adb_swipe() {
-	adb -s "$1" shell input swipe "$2" "$3" "$4" "$5"
+	adb_shell "$1" input swipe "$2" "$3" "$4" "$5"
 }
 
 adb_clear_logcat() {
 		# TODO: introduce d0 d1
 		if [ $# -eq 1 ]; then
-    	adb -s "$1" logcat -c
+    	adb -s "$1" wait-for-device logcat -c
 		else
-			adb -s "$serial_0" logcat -c
-			adb -s "$serial_1" logcat -c
+			adb -s "$serial_0"  wait-for-device logcat -c
+			adb -s "$serial_1" wait-for-device logcat -c
 		fi
 }
 
@@ -224,16 +225,12 @@ adb_check_callState() {
 	fi
 
 	while [ "$(date +%s)" -lt "$timeout" ]; do
-		cs=$(adb -s $1 shell dumpsys telephony.registry | grep "mCallState=$2")
+		cs=$(adb_shell $1 dumpsys telephony.registry | grep "mCallState=$2")
 		if [ ${#cs} -gt 0 ]; then return 0; fi
 	done
 
 	return 1
 }
-
-# TODO: clean up, make output pretty (check all lines, new line after each tests, plus new line after sourcing our invoking stuff)
-#				check interactive mode, does everything work out fine? (can timeouts be passed?)
-#       After finally pushed, think about introduing getting APN and pinging to distinguish between DATA-TEST INTERNET-TEST!
 
 adb_grep_logcat() {
 
@@ -299,10 +296,9 @@ adb_grep_logcat_twice() {
 #
 # Note: The SMS Messaging (AOSP) app works best with ascent.sh
 send_sms() {
-	go_to_homescreen
-	adb_clear_logcat
 
 	init_test "SMS" "$1 sends SMS to $2"
+
 	adb_send_sms "$1" "$2" "test_input"
 
 	# verification that SMS request could be sent(?)
@@ -457,17 +453,17 @@ test_ping() {
 	3G
 }
 
-# INTERACTIVE MODE HELPER FUNCTIONS
+# to provide help in interactive mode
 help() {
 	print_help
 }
 
 adb0() {
-	adb wait-for-device -s "$serial_0" "$@"
+	adb_shell "$serial_0" "$@"
 }
 
 adb1() {
-	adb wait-for-device -s "$serial_1" "$@"
+	adb_shell "$serial_1" "$@"
 }
 
 # jumping to the home screen.
