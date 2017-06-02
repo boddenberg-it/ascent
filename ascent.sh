@@ -86,14 +86,13 @@ print_help() {
 
 print_interactive_mode_banner() {
 	echo -e "${Y}#################################################################"
-	echo -e "#                                                               #"
-	echo -e "#  Ascent shall help testing cellular networks with 2 Android   #"
-	echo -e "#  devices by only ovserving them - no physical interaction.    #"
-	echo -e "#  It provides an adb-based CLI to call, send SMS and verify    #"
-	echo -e "#  data. Although \"tests\" still have to be manually verified.   #"
+	echo -e "#  Ascent shall help testing cellular networks (2/3/4G) with    #"
+	echo -e "#  two Android devices as subscribers (MS/UE). It provides an   #"
+	echo -e "#  adb-based CLI to test call and SMS functionalities (CS),     #"
+	echo -e "#  as well as data + internet connection (PS).                  #"
 	echo -e "#                                                               #"
 	echo -e "#  author:  André Boddenberg (ascent@boddenberg.it)             #"
-	echo -e "#  version: $ASCENT_VERSION                                                 #"
+	echo -e "#  version: $ASCENT_VERSION                                                #"
 	echo -e "#                                                               #"
 	if [ $# -gt 0 ]; then
 		echo -e "#################################################################${NC}"
@@ -101,26 +100,19 @@ print_interactive_mode_banner() {
 }
 
 sanity() {
-	echo
-	echo -e "${Y}[SANITY_CHECK] does config exist?${NC}"
+
+	echo -e "\n${Y}[SANITY_CHECK] does config exist?${NC}"
 
 	if [ ! -f "$ASCENT_CONFIG" ]; then
-		echo
-		echo -e "${R}[ERROR] No config file found! Please provide one in current working "
-		echo -e "        directory or pass on e.g.: "
-		echo
-		echo -e "            ./ascent -c ~/.ascent${NC}"
-		echo
-		export ASCENT_CONFIG=""
+		echo -e "\n${R}[ERROR] No config file found! Please provide one in ~/.ascent"
+		echo -e "        or pass on e.g.:\n"
+		echo -e "            ./ascent -c ~/.ascent${NC}\n"
 		return 1
 
 	else
-		echo
-		echo -e "${Y}[INFO] sourcing $ASCENT_CONFIG${NC}"
-		cat "$ASCENT_CONFIG"
-		echo
-
+		log_info "sourcing $ASCENT_CONFIG"
 		source "$ASCENT_CONFIG"
+
 		missing=""
 
 		if [ -z ${serial_0+x} ]; then missing="$missing serial_0"; fi
@@ -132,9 +124,7 @@ sanity() {
 		if [ -z ${name_1+x} ]; then missing="$missing name_1"; fi
 
 		if [ ${#missing} -gt 0 ]; then
-			echo
-			echo -e "${R}[ERROR] Config does not hold following information: $missing${NC}"
-			echo
+			log_error "Config does not hold following information: $missing"
 			return 1
 		fi
 
@@ -148,14 +138,13 @@ sanity() {
 	err_codes=$((err_codes+$?))
 
 	if [ "$err_codes" -gt 0 ]; then
-		echo
-		echo -e "${R}[ERROR] not both devices are connected!${NC}"
-		echo
+		log_error "not both devices are connected!"
 		return 1
 	else
-		echo -e "${G}[INFO] adb connections successfully verified.${NC}"
-		echo
+		log_info "adb connections successfully verified"
 	fi
+
+	echo -e "${G}[SANITY_CHECK] SUCCESS${NC}\n"
 }
 
 # ADB WRAPPER
@@ -192,7 +181,6 @@ adb_call() {
 	adb -s "$1" shell am start -a android.intent.action.CALL -d tel:"$2"
 }
 
-# TODO: ping -c $3 optional
 adb_ping() {
 
 	ping_count=3
@@ -201,9 +189,6 @@ adb_ping() {
 	# freaky string, because two commands can only be passed to adb shell at
 	# once within single quotes, but passing URL and ping count is necessary.
   output=$(adb -s $1 shell 'ping -c '"$ping_count"' '"$2"'; echo $?')
-
-	# verbose-mode(?)
-	# echo $output
 
 	if [[ $(echo $output | tail -1) != *"0"* ]]; then return 1; fi
 }
@@ -313,41 +298,34 @@ send_sms() {
 	go_to_homescreen
 	adb_clear_logcat
 
-	echo -e "$Y[TEST-SMS] ${G}$1${Y} sends SMS to ${G}$2${Y} ${NC}"
+	init_test "SMS" "$1 sends SMS to $2"
 	adb_send_sms "$1" "$2" "test_input"
 
 	# verification that SMS request could be sent(?)
 	if adb_grep_logcat "$1" ".*Mms.*onStart:.*mResultCode: -1 = Activity.RESULT_OK" > /dev/null; then
-			echo -e "$Y[INFO] ${G}$1${Y} tries to send SMS to CN... ${NC}"
+			log_info "$1 tries to send SMS to CN..."
 	else
-			echo -e "${R}[TIMEOUT] ${G}$1${Y} SMS could not be send (yet) ${G}$2${Y} ${NC}"
-			go_to_homescreen
+			log_error "TIMEOUT $1 SMS could not be send (yet) to $2"
 			return 1
 	fi
 
 	# verification that SMS request could be sent(?)
 	if adb_grep_logcat_twice "$1" ".*Mms.*onStart:.*mResultCode: -1 = Activity.RESULT_OK" > /dev/null; then
-			echo -e "$Y[INFO] ${G}$1${Y} successfully sent SMS to CN ${NC}"
+			log_info "$1 successfully sent SMS to CN"
 	else
-			echo -e "${R}[TIMEOUT] ${G}$1${Y} SMS could not be send (yet) ${G}$2${Y} ${NC}"
-			echo
-			go_to_homescreen
+			log_error "TIMEOUT $1 SMS could not be send (yet) $2"
 			return 1
 	fi
 
 	# verifying that reciever received SMS
 	if adb_grep_logcat "$3" "handleSmsReceived" > /dev/null; then
-		echo -e "$Y[INFO] ${G}$3${Y} received SMS of $1 ${NC}"
+		log_info "$3 received SMS of $1"
 	else
-		echo -e "${R}[TIMEOUT] ${G}$1${Y} SMS could not be received (yet) ${G}$2${Y} ${NC}"
-		echo
-		go_to_homescreen
+		log_error "TIMEOUT $1 SMS could not be received (yet) $2"
 		return 1
 	fi
 
-	go_to_homescreen
-	echo -e "${G}[TEST-SMS] SUCCESS"
-	echo
+	test_success "SMS"
 }
 
 do_call() {
@@ -388,55 +366,60 @@ do_call() {
 }
 
 do_icall() {
-	go_to_homescreen
-	echo -e "${Y}[TEST-CALL] ${G}$1${Y} calls ${G}$2${Y} ${NC}"
+
+	init_test "CALL" "$1 calls $2"
 
 	adb_call "$1" "$2"
 
-	echo -e "${Y}	${B}[INPUT]${Y} does it ring? (no|ENTER)${NC}"
+	echo -e "${B}[INPUT]${Y} does it ring? (no|ENTER)${NC}"
 	read does_it_ring
 
 	if [[ "$does_it_ring" == *"no" ]]; then
-		echo -e "${R} 	[ERROR] call could not be established! ${NC}"
+		# canceling call-request in case it's still active
+		if adb_check_callState "$1" "2" > /dev/null; then
+			adb_keyevent "$1" "$KEYCODE_ENDCALL"
+		fi
+		log_error "call could not be established"
+
 	else
-		echo -e "${Y}	[INFO] ${G}$2${Y} accepts call${NC}"
+		log_info "$2 accepts call"
 		adb_keyevent "$3" "$KEYCODE_CALL"
 
-		echo -e "${Y}	${B}[INPUT]${Y} enough of talking? ${NC}"
+		echo -e "${B}[INPUT]${Y} enough of talking? ${NC}"
 		read
 
-		echo -e "${Y}	[INFO] ${G}$1${Y} ends call ${NC}"
+		log_info "$1 ends call"
 		adb_keyevent "$1" "$KEYCODE_ENDCALL"
 	fi
 
 	go_to_homescreen
 }
 
-# TEST WRAPPER
-sms() {
+
+# test wrapper for interactive mode
+generic_test() {
 	if [ $# -eq 2 ]; then
-		if [ "$1" = "d0" ]; then
-			send_sms "$serial_0" "$msisdn_1" "$serial_1"
+		if [ "$2" = "d0" ]; then
+			$1 "$serial_0" "$msisdn_1" "$serial_1"
 		else
-			send_sms "$serial_1" "$msisdn_0" "$serial_0"
+			$1 "$serial_1" "$msisdn_0" "$serial_0"
 		fi
 	else
-		send_sms "$serial_0" "$msisdn_1" "$serial_1"
-		send_sms "$serial_1" "$msisdn_0" "$serial_0"
+		$1 "$serial_0" "$msisdn_1" "$serial_1"
+		$1 "$serial_1" "$msisdn_0" "$serial_0"
 	fi
 }
 
+sms() {
+	generic_test "send_sms" $@
+}
+
 call() {
-	if [ $# -eq 2 ]; then
-		if [ "$1" = "d0" ]; then
-			do_call "$serial_0" "$msisdn_1" "$serial_1"
-		else
-			do_call "$serial_1" "$msisdn_0" "$serial_0"
-		fi
-	else
-		do_call "$serial_0" "$msisdn_1" "$serial_1"
-		do_call "$serial_1" "$msisdn_0" "$serial_0"
-	fi
+	generic_test "do_call" $@
+}
+
+call() {
+	generic_test "do_icall" $@
 }
 
 data() {
@@ -445,20 +428,15 @@ data() {
 }
 
 test_ping() {
-	echo -e "${Y}[TEST-DATA] ${G}$1${Y} tries to ping ${G}$2${Y} ${NC}"
+	init_test "DATA" "$1 tries to ping $2"
 
-	if [ $# -eq 3 ]; then
-		adb_ping "$1" "$2" "$3"
-	else
-		adb_ping "$1" "$2"
-	fi
+	adb_ping $@
 
 	if [ $? -eq 0 ]; then
-		echo -e "${G}[TEST-DATA] SUCCESS ${NC}"
+		test_success "DATA"
 	else
-		echo -e "${R}[TEST-DATA] FAILURE ${NC}"
+		log_error "FAILURE"
 	fi
-	echo
 }
 
 2g() {
@@ -471,17 +449,21 @@ test_ping() {
 	data
 }
 
+4G() {
+	3G
+}
+
 # INTERACTIVE MODE HELPER FUNCTIONS
 help() {
 	print_help
 }
 
 adb0() {
-	adb -s "$serial_0" "$@"
+	adb wait-for-device -s "$serial_0" "$@"
 }
 
 adb1() {
-	adb -s "$serial_1" "$@"
+	adb wait-for-device -s "$serial_1" "$@"
 }
 
 # jumping to the home screen.
@@ -497,9 +479,7 @@ unlock_device() {
 	serial=""
 
 	if [ $# -ne 1 ]; then
-		echo
-		echo -e "${R}[ERROR] You must specify which device (\$d0||\$d1) should be unlocked!"
-		echo
+		log_error "You must specify which device (\$d0||\$d1) should be unlocked"
 		return 1
 
 	elif [ "$1" = "d0" ]; then
@@ -544,14 +524,7 @@ fi
 
 # invokation with test-case/suite
 if [ $# -gt 0 ]; then
-	# Enable error code evaluation for test_ascent.sh.
-	if [ "$1" = "testing" ]; then
-		sanity
-		exit $?
-	else
-		sanity
-	fi
-
+	sanity
 	if [ $? -eq 0 ]; then
 		# Executing each test-case/suite sequentially.
 		for test in "$@"; do
@@ -559,9 +532,7 @@ if [ $# -gt 0 ]; then
 			# Abort if passed test-case/suite i.e. command, could not be found!
 			if [ $? -gt 0 ]; then
 				print_help
-				echo
-				echo "${R} [ERROR] test-case/suite: \"$test\" is not available"
-				echo
+				log_error "test-case/suite: \"$test\" is not available"
 				exit 1
 			fi
 		done
