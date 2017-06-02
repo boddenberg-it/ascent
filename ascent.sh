@@ -156,6 +156,10 @@ KEYCODE_DPAD_RIGHT=22
 KEYCODE_POWER=26
 KEYCODE_ENTER=66
 
+adb_shell() {
+	adb -s "$1" wait-for-device shell $@
+}
+
 adb_keyevent() {
 	adb -s "$1" shell input keyevent "$2"
 }
