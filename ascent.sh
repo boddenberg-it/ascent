@@ -1,5 +1,36 @@
 #!/bin/bash
 
+ASCENT_VERSION="0.1"
+
+# colours
+NC="\033[0m"
+R="\033[0;31m"
+G="\033[0;32m"
+B="\033[0;35m"
+Y="\033[1;33m"
+GRAY="\033[0;37m"
+
+# LOG HELPER
+log_info() {
+	echo -e "${Y}[INFO] $1 ${NC}"
+}
+
+log_error() {
+	echo -e "${R}[ERROR] $1${NC}\n"
+	# "resetting" devices to avoid flaky states
+	go_to_homescreen
+}
+
+init_test() {
+	go_to_homescreen
+	echo -e "\n${Y}[TEST-$1] $2 ${NC}"
+}
+
+test_success() {
+	echo -e "${G}[TEST-$1] SUCCESS${NC}\n"
+	go_to_homescreen
+}
+
 print_help() {
 
 	print_interactive_mode_banner
@@ -69,25 +100,6 @@ print_interactive_mode_banner() {
 	fi
 }
 
-# https://developer.android.com/reference/android/view/KeyEvent.html
-KEYCODE_HOME=3
-KEYCODE_CALL=5
-KEYCODE_ENDCALL=6
-KEYCODE_DPAD_RIGHT=22
-KEYCODE_POWER=26
-KEYCODE_ENTER=66
-
-# colours
-NC="\033[0m"
-R="\033[0;31m"
-G="\033[0;32m"
-B="\033[0;35m"
-Y="\033[1;33m"
-GRAY="\033[0;37m"
-
-# ASCENT_CONFIG="" check if something crashes, but shouldn't
-ASCENT_VERSION="0.1"
-
 sanity() {
 	echo
 	echo -e "${Y}[SANITY_CHECK] does config exist?${NC}"
@@ -147,6 +159,14 @@ sanity() {
 }
 
 # ADB WRAPPER
+# https://developer.android.com/reference/android/view/KeyEvent.html
+KEYCODE_HOME=3
+KEYCODE_CALL=5
+KEYCODE_ENDCALL=6
+KEYCODE_DPAD_RIGHT=22
+KEYCODE_POWER=26
+KEYCODE_ENTER=66
+
 adb_keyevent() {
 	adb -s "$1" shell input keyevent "$2"
 }
@@ -183,7 +203,7 @@ adb_ping() {
   output=$(adb -s $1 shell 'ping -c '"$ping_count"' '"$2"'; echo $?')
 
 	# verbose-mode(?)
-	echo $output
+	# echo $output
 
 	if [[ $(echo $output | tail -1) != *"0"* ]]; then return 1; fi
 }
@@ -222,6 +242,10 @@ adb_check_callState() {
 	return 1
 }
 
+# TODO: clean up, make output pretty (check all lines, new line after each tests, plus new line after sourcing our invoking stuff)
+#				check interactive mode, does everything work out fine? (can timeouts be passed?)
+#       After finally pushed, think about introduing getting APN and pinging to distinguish between DATA-TEST INTERNET-TEST!
+
 adb_grep_logcat() {
 
 	timeout=$(date +%s)
@@ -238,7 +262,7 @@ adb_grep_logcat() {
 		# -d is necessary, because otherwise adb does not terminate on its own.
 		adb -s "$1" logcat -d > "logcat_$1.txt"
 
-		if grep -E "$2" < logcat_$1.txt; then
+		if grep -E "$2" < logcat_$1.txt > /dev/null; then
 			echo "$(grep -E "$2" < logcat_$1.txt | wc -l)"
 			rm "logcat_$1.txt"
 			return 0;
@@ -293,7 +317,7 @@ send_sms() {
 	adb_send_sms "$1" "$2" "test_input"
 
 	# verification that SMS request could be sent(?)
-	if adb_grep_logcat "$1" ".*Mms.*onStart:.*mResultCode: -1 = Activity.RESULT_OK"; then
+	if adb_grep_logcat "$1" ".*Mms.*onStart:.*mResultCode: -1 = Activity.RESULT_OK" > /dev/null; then
 			echo -e "$Y[INFO] ${G}$1${Y} tries to send SMS to CN... ${NC}"
 	else
 			echo -e "${R}[TIMEOUT] ${G}$1${Y} SMS could not be send (yet) ${G}$2${Y} ${NC}"
@@ -302,62 +326,65 @@ send_sms() {
 	fi
 
 	# verification that SMS request could be sent(?)
-	if adb_grep_logcat_twice "$1" ".*Mms.*onStart:.*mResultCode: -1 = Activity.RESULT_OK"; then
-			echo -e "$Y[INFO] ${G}$1${Y} successfully sends SMS to CN ${NC}"
+	if adb_grep_logcat_twice "$1" ".*Mms.*onStart:.*mResultCode: -1 = Activity.RESULT_OK" > /dev/null; then
+			echo -e "$Y[INFO] ${G}$1${Y} successfully sent SMS to CN ${NC}"
 	else
 			echo -e "${R}[TIMEOUT] ${G}$1${Y} SMS could not be send (yet) ${G}$2${Y} ${NC}"
+			echo
 			go_to_homescreen
 			return 1
 	fi
 
 	# verifying that reciever received SMS
-	if adb_grep_logcat "$3" "handleSmsReceived"; then
+	if adb_grep_logcat "$3" "handleSmsReceived" > /dev/null; then
 		echo -e "$Y[INFO] ${G}$3${Y} received SMS of $1 ${NC}"
 	else
 		echo -e "${R}[TIMEOUT] ${G}$1${Y} SMS could not be received (yet) ${G}$2${Y} ${NC}"
+		echo
 		go_to_homescreen
 		return 1
 	fi
 
-	# print everything OSSOM!
-
 	go_to_homescreen
+	echo -e "${G}[TEST-SMS] SUCCESS"
 	echo
 }
 
 do_call() {
-	go_to_homescreen
-	echo -e "\n${Y}[TEST-CALL] ${G}$1${Y} calls ${G}$2${Y} ${NC}"
 
-	adb_call "$1" "$2"
+	init_test "CALL" "$1 calls $2"
 
-	# verification that SMS request could be sent(?)
-	if adb_check_callState "$1" "2"; then
-		echo "INFO call intent successful"
+	adb_call "$1" "$2"; sleep 1
+
+	# call intent verification
+	if adb_check_callState "$1" "2" > /dev/null; then
+		log_info "call intent successful"
 	else
-		echo "ERROR call intent failed"
-		if adb_check_callState "$1" "2"; then
-				adb_keyevent "$1" "$KEYCODE_ENDCALL"
-		fi
-		go_to_homescreen
+		log_error "call intent failed"
 		return 1
 	fi
 
-	if adb_check_callState "$3" "1"; then
-		echo -e "${Y}	[INFO] ${G}$2${Y} accepts call${NC}"
+	# verification whether call reached its destination
+	if adb_check_callState "$3" "1" > /dev/null; then
+		log_info "$2 accepts call"
 		adb_keyevent "$3" "$KEYCODE_CALL"
 	else
-			echo -e "${R}[TIMEOUT] call could not be established${NC}"
-			go_to_homescreen
-			return 1
+		# canceling call-request in case it's still active
+		if adb_check_callState "$1" "2" > /dev/null; then
+			adb_keyevent "$1" "$KEYCODE_ENDCALL"
+		fi
+
+		log_error "call could not be established"
+		return 1
 	fi
 
 	# holding line
 	sleep 3
-
-	echo -e "${Y}	[INFO] ${G}$1${Y} ends call ${NC}"
+	log_info "$1 ends call"
 	adb_keyevent "$1" "$KEYCODE_ENDCALL"
-	go_to_homescreen
+
+	test_success "CALL"
+
 }
 
 do_icall() {
