@@ -1,4 +1,4 @@
-#!/bin/bash
+diff#!/bin/bash
 
 ASCENT_VERSION="0.1"
 
@@ -87,6 +87,7 @@ print_help() {
 
 print_interactive_mode_banner() {
 	echo -e "${Y}#################################################################"
+	echo -e "#                                                               #"
 	echo -e "#  Ascent shall help testing cellular networks (2/3/4G) with    #"
 	echo -e "#  two Android devices as subscribers (MS/UE). It provides an   #"
 	echo -e "#  adb-based CLI to test call and SMS functionalities (CS),     #"
@@ -111,8 +112,8 @@ sanity() {
 		return 1
 
 	else
-		log_info "sourcing $ASCENT_CONFIG"
 		source "$ASCENT_CONFIG"
+		cat "$ASCENT_CONFIG"
 
 		missing=""
 
@@ -127,8 +128,9 @@ sanity() {
 		if [ ${#missing} -gt 0 ]; then
 			echo -e "${R}[ERROR] Config does not hold following information: $missing${NC}"
 			return 1
+		else
+			echo -e "${G}[SANITY_CHECK] SUCCESS${NC}\n"
 		fi
-
 	fi
 
 	echo -e "${Y}[SANITY_CHECK] are both devices connected?${NC}"
@@ -142,10 +144,8 @@ sanity() {
 		echo -e "${R}[ERROR] not both devices are connected${NC}\n"
 		return 1
 	else
-		log_info "adb connections successfully verified"
+		echo -e "${G}[SANITY_CHECK] SUCCESS${NC}\n"
 	fi
-
-	echo -e "${G}[SANITY_CHECK] SUCCESS${NC}\n"
 }
 
 # ADB WRAPPER
@@ -197,12 +197,11 @@ adb_ping() {
 
 	ping_count=3
 	if [ ! -z ${3+x} ]; then ping_count="$3"; fi
-
 	# freaky string, because two commands can only be passed to adb shell at
 	# once within single quotes, but passing URL and ping count is necessary.
-  output=$(adb_shell $1 'ping -c '"$ping_count"' '"$2"'; echo $?')
-
-	if [[ $(echo $output | tail -1) != *"0"* ]]; then return 1; fi
+  adb_shell $1 'ping -c '"$ping_count"' '"$2"'; echo $?' > ascent_tmp
+	head -n -1 ascent_tmp
+	if [[ $(cat ascent_tmp | tail -1) != "0"* ]]; then return 1; fi
 }
 
 adb_swipe() {
@@ -232,8 +231,8 @@ adb_check_callState() {
 	fi
 
 	while [ "$(date +%s)" -lt "$timeout" ]; do
-		cs=$(adb_shell $1 dumpsys telephony.registry | grep "mCallState=$2")
-		if [ ${#cs} -gt 0 ]; then return 0; fi
+		call_state=$(adb_shell $1 dumpsys telephony.registry | grep "mCallState=$2")
+		if [ ${#call_state} -gt 0 ]; then return 0; fi
 	done
 
 	return 1
@@ -381,7 +380,7 @@ do_icall() {
 	echo -e "${B}[INPUT]${Y} does it ring? (no|ENTER)${NC}"
 	read does_it_ring
 
-	if [[ "$does_it_ring" == *"no" ]]; then
+	if [[ "$does_it_ring" == *"no"* ]]; then
 		# canceling call-request in case it's still active
 		if adb_check_callState "$1" "2" > /dev/null; then
 			adb_keyevent "$1" "$KEYCODE_ENDCALL"
@@ -405,8 +404,8 @@ do_icall() {
 
 # test wrapper for interactive mode
 generic_test() {
-	if [ $# -eq 2 ]; then
-		if [ "$2" = "d0" ]; then
+	if [ $# -eq 3 ]; then
+		if [ "$1" = "d0" ]; then
 			$1 "$serial_0" "$msisdn_1" "$serial_1"
 		else
 			$1 "$serial_1" "$msisdn_0" "$serial_0"
@@ -417,6 +416,7 @@ generic_test() {
 	fi
 }
 
+#
 sms() {
 	generic_test "send_sms" $@
 }
@@ -430,11 +430,19 @@ icall() {
 }
 
 data() {
-	test_ping $serial_0 8.8.8.8
-	test_ping $serial_1 8.8.8.8
+	apn_ip="$(adb1 'ip a | grep global' | cut -d ' ' -f6 | cut -d '.' -f1,2,3)"
+
+	test_ping "$serial_0" "${apn_ip}.1"
+	test_ping "$serial_1" "${apn_ip}.1"
+}
+
+internet() {
+	test_ping "$serial_0" "8.8.8.8"
+	test_ping "$serial_1" "8.8.8.8"
 }
 
 test_ping() {
+
 	init_test "DATA" "$1 tries to ping $2"
 
 	adb_ping $@
@@ -446,14 +454,23 @@ test_ping() {
 	fi
 }
 
-2g() {
+cs() {
 	sms
 	call
 }
 
-3g() {
-	2g
+ps() {
 	data
+	internet
+}
+
+2g() {
+	cs
+}
+
+3g() {
+	cs
+	ps
 }
 
 4G() {
