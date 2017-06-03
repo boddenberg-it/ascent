@@ -93,7 +93,7 @@ print_interactive_mode_banner() {
 	echo -e "#  as well as data + internet connection (PS).                  #"
 	echo -e "#                                                               #"
 	echo -e "#  author:  André Boddenberg (ascent@boddenberg.it)             #"
-	echo -e "#  version: $ASCENT_VERSION                                                #"
+	echo -e "#  version: $ASCENT_VERSION                                                 #"
 	echo -e "#                                                               #"
 	if [ $# -gt 0 ]; then
 		echo -e "#################################################################${NC}"
@@ -125,7 +125,7 @@ sanity() {
 		if [ -z ${name_1+x} ]; then missing="$missing name_1"; fi
 
 		if [ ${#missing} -gt 0 ]; then
-			log_error "Config does not hold following information: $missing"
+			echo -e "${R}[ERROR] Config does not hold following information: $missing${NC}"
 			return 1
 		fi
 
@@ -139,7 +139,7 @@ sanity() {
 	err_codes=$((err_codes+$?))
 
 	if [ "$err_codes" -gt 0 ]; then
-		log_error "not both devices are connected!"
+		echo -e "${R}[ERROR] not both devices are connected${NC}\n"
 		return 1
 	else
 		log_info "adb connections successfully verified"
@@ -158,7 +158,14 @@ KEYCODE_POWER=26
 KEYCODE_ENTER=66
 
 adb_shell() {
-	adb -s "$1" wait-for-device shell $@
+	if [ $# -gt 1 ]; then
+		serial=$1
+		shift
+		adb -s "$serial" wait-for-device shell $@
+	else
+		# interactive mode
+		adb -s "$1" wait-for-device shell
+	fi
 }
 
 adb_keyevent() {
@@ -418,7 +425,7 @@ call() {
 	generic_test "do_call" $@
 }
 
-call() {
+icall() {
 	generic_test "do_icall" $@
 }
 
