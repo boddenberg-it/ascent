@@ -36,69 +36,66 @@ print_help() {
 
 	print_interactive_mode_banner
 
-	echo -e "#  There are ${R}two${Y} ways of using ascent.sh:                       #"
-	echo -e "#                                                               #"
-	echo -e "#       ${R}1st)${Y} ${GRAY}./ascent.sh ${G}arg(s)${Y}                                 #"
-	echo -e "#       ${R}2nd)${Y} ${GRAY}source ascent.sh   ${B}(interactive mode)${Y}              #"
-	echo -e "#                                                               #"
-	echo -e "#  But first, one need to create ascent.cfg file, which can     #"
-	echo -e "#  be placed in ~/.ascent or passed when invoking:              #"
-	echo -e "#                                                               #"
-	echo -e "#       ${GRAY}./ascent -c ${G}<path_to_config_file>${Y} ${G}arg(s)${Y}                #"
-	echo -e "#                                                               #"
-	echo -e "#  Following information need to be provided by config file:    #"
-	echo -e "#                                                               #"
-	echo -e "#       ${G}serial_0=05cd98e0f0fd7bc8${Y}                               #"
-	echo -e "#       ${G}msisdn_0=1234${Y}                                           #"
-	echo -e "#       ${G}name_0=s7${Y}                                               #"
-	echo -e "#                                                               #"
-	echo -e "#       ${G}serial_1=4ef2d43176795a51${Y}                               #"
-	echo -e "#       ${G}msisdn_1=5678${Y}                                           #"
-	echo -e "#       ${G}name_1=nexus6${Y}                                           #"
-	echo -e "#                                                               #"
-	echo -e "#  ${R}1st)${Y} When ascent.sh is invoked, one can pass several         #"
-	echo -e "#       of following arguments (tests suites/cases):            #"
-	echo -e "#                                                               #"
-	echo -e "#           cases:  ${G}call${Y}, ${G}sms${Y}, ${G}data${Y}                             #"
-	echo -e "#           suites: ${G}2g${Y} (call + sms), ${G}3g${Y} (call + sms + data)     #"
-	echo -e "#                                                               #"
-	echo -e "#  ${R}2nd)${Y} When ascent.sh is sourced, one can use invokations      # "
-	echo -e "#       described in ${R}1st${Y} as well. Additionally one can use      #"
-	echo -e "#       commands, where devices can be be specified:            #"
-	echo -e "#                                                               #"
-	echo -e "#           ${B}sms  ${G}d0 d1${Y}                                          #"
-	echo -e "#           ${B}call ${G}d1 d0${Y}                                          #"
-	echo -e "#           ${B}ping ${G}d1 ${G}<IP|URL>${Y}                                    #"
-	echo -e "#                                                               #"
-	echo -e "#       Furthermore, ascent provides some handy commands,       #"
-	echo -e "#       when tests failed and devices need to be debugged:      #"
-	echo -e "#                                                               #"
-	echo -e "#           ${B}help${Y}                                                #"
-	echo -e "#           ${B}sanity${Y}                                              #"
-	echo -e "#           ${B}go_to_homescreen${Y}                                    #"
-	echo -e "#                                                               #"
-	echo -e "#           ${B}unlock_device ${G}(d0||d1)${Y}                              #"
-	echo -e "#           ${B}(adb0||adb1) ${G}shell input keyevent 66${Y}                #"
-	echo -e "#                                                               #"
-	echo -e "#  ${Y}More information on https://github.com/boddenberg-it/ascent${Y}  #"
-	echo -e "#                                                               #"
-	echo -e "#################################################################${NC}"
+	help_text="${Y}
+There are ${R}two${Y} ways of using ascent.sh
+
+	${R}1st)${Y} ${GRAY}./ascent.sh ${G}arg(s) ${Y}
+	${R}2nd)${Y} ${GRAY}source ascent.sh   ${B}(interactive mode) ${Y}
+
+But first, one need to provide a config file, which can
+be placed in ~/.ascent or passed when invoking:
+
+	${GRAY}./ascent.sh -c ${G}<path_to_config_file>${Y} ${G}arg(s) ${Y}
+
+Following information need to be provided by config file:
+
+	${GRAY}serial_0=05cd98e0f0fd7bc8 ${Y}
+	${GRAY}msisdn_0=1234 ${Y}
+
+	${GRAY}serial_1=4ef2d43176795a51 ${Y}
+	${GRAY}msisdn_1=5678 ${Y}
+
+${R}1st)${Y} When ascent.sh is invoked, one can pass several
+of following arguments/tests-:
+
+	cases:  ${G}call${Y}, ${G}data${Y}, ${G}internet${Y}, ${G}sms${Y}
+	suites: ${G}2g${Y}, ${G}3g${Y}, ${G}4g${Y}, ${G}cs${Y}, ${G}ps${Y}
+
+${R}2nd)${Y} When ascent.sh is sourced, one can use invokations
+described in ${R}1st${Y} as well. Additionally one can use
+commands, where devices have to be be specified:
+
+	${B}aping ${G}d1 <IP|URL>
+	${B}call ${G}d1 d0
+	${B}icall ${G}d0 d1${Y} (user accepts/ends call)
+	${B}sms  ${G}d0 d1${Y}
+
+Furthermore, ascent provides some handy commands,
+when tests failed and devices need to be debugged:
+
+	${B}adb0 ${G}shell input keyevent 66
+	${B}adb1 ${Y}(open adb shell of d1)
+	${B}go_to_homescreen
+	help
+	sanity
+	unlock_device ${G}(d0||d1)
+
+${Y}More information on https://github.com/boddenberg-it/ascent ${NC}
+"
+	echo -e "$help_text"
 }
 
 print_interactive_mode_banner() {
-	echo -e "${Y}#################################################################"
-	echo -e "#                                                               #"
-	echo -e "#  Ascent shall help testing cellular networks (2/3/4G) with    #"
-	echo -e "#  two Android devices as subscribers (MS/UE). It provides an   #"
-	echo -e "#  adb-based CLI to test call and SMS functionalities (CS),     #"
-	echo -e "#  as well as data + internet connection (PS).                  #"
-	echo -e "#                                                               #"
-	echo -e "#  author:  André Boddenberg (ascent@boddenberg.it)             #"
-	echo -e "#  version: $ASCENT_VERSION                                                 #"
-	echo -e "#                                                               #"
-	if [ $# -gt 0 ]; then
-		echo -e "#################################################################${NC}"
-	fi
+	header_text="${Y}
+Ascent shall help testing cellular networks (2/3/4G) with
+two Android devices as subscribers (MS/UE). It provides an
+adb-based CLI to test call and SMS functionalities (CS),
+as well as data + internet connection (PS).
+
+author:  André Boddenberg (ascent@boddenberg.it)
+version: $ASCENT_VERSION ${NC}
+"
+	echo -e "$header_text"
 }
 
 sanity() {
@@ -119,11 +116,9 @@ sanity() {
 
 		if [ -z ${serial_0+x} ]; then missing="$missing serial_0"; fi
 		if [ -z ${msisdn_0+x} ]; then missing="$missing msisdn_0"; fi
-		if [ -z ${name_0+x} ]; then missing="$missing name_0"; fi
 
 		if [ -z ${serial_1+x} ]; then missing="$missing serial_1"; fi
 		if [ -z ${msisdn_1+x} ]; then missing="$missing msisdn_1"; fi
-		if [ -z ${name_1+x} ]; then missing="$missing name_1"; fi
 
 		if [ ${#missing} -gt 0 ]; then
 			echo -e "${R}[ERROR] Config does not hold following information: $missing${NC}"
@@ -325,9 +320,9 @@ send_sms() {
 
 	# verifying that reciever received SMS
 	if adb_grep_logcat "$3" "handleSmsReceived" > /dev/null; then
-		log_info "$3 received SMS of $1"
+		log_info "$2 received SMS of $1"
 	else
-		log_error "TIMEOUT $1 SMS could not be received (yet) $2"
+		log_error "TIMEOUT SMS of $1 could not be received (yet) $2"
 		return 1
 	fi
 
@@ -354,7 +349,7 @@ do_call() {
 		adb_keyevent "$3" "$KEYCODE_CALL"
 	else
 		# canceling call-request in case it's still active
-		if adb_check_callState "$1" "2" > /dev/null; then
+		if adb_check_callState "$1" "2" "1" > /dev/null; then
 			adb_keyevent "$1" "$KEYCODE_ENDCALL"
 		fi
 
@@ -377,12 +372,12 @@ do_icall() {
 
 	adb_call "$1" "$2"
 
-	echo -e "${B}[INPUT]${Y} does it ring? (no|ENTER)${NC}"
+	echo -e "${B}[INPUT]${Y} does it ring? (Y|n)${NC}"
 	read does_it_ring
 
-	if [[ "$does_it_ring" == *"no"* ]]; then
+	if [ "$does_it_ring" = "n" ]; then
 		# canceling call-request in case it's still active
-		if adb_check_callState "$1" "2" > /dev/null; then
+		if adb_check_callState "$1" "2" "1" > /dev/null; then
 			adb_keyevent "$1" "$KEYCODE_ENDCALL"
 		fi
 		log_error "call could not be established"
@@ -439,6 +434,14 @@ data() {
 internet() {
 	test_ping "$serial_0" "8.8.8.8"
 	test_ping "$serial_1" "8.8.8.8"
+}
+
+aping() {
+	if [ "$1" = "d0" ]; then
+		test_ping "$serial_0" "$2" "$3"
+	else
+		test_ping "$serial_1" "$2" "$3"
+	fi
 }
 
 test_ping() {
