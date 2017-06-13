@@ -19,7 +19,7 @@ v0.1: Because ascent will only execute tests, but *you* still have to verify the
 
 Please click on the preview image to watch demo (~31 MB).
 
-<a href="https://boddenberg.it/ascent/ascent_3g.png" target="_blank"><img src="https://boddenberg.it/ascent/preview.png"
+<a href="https://boddenberg.it/ascent/final_ascent_v0.2.mp4" target="_blank"><img src="https://boddenberg.it/ascent/preview.png"
 alt="ascent demo"/></a>
 
 
