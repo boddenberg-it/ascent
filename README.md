@@ -82,7 +82,7 @@ call d0 d1
 ```
 sms d1 d0
 ```
-![console output of 'sms d0 d1'](https://boddenberg.it/ascent/sms_d1_d0.png)
+![console output of 'sms d0 d1'](https://boddenberg.it/ascent/sms_d1_d0_v2.png)
 
 ```
 aping d0 heisec.de 5
