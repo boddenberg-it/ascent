@@ -1,6 +1,6 @@
 diff#!/bin/bash
 
-ASCENT_VERSION="0.1"
+ASCENT_VERSION="0.2"
 
 # colours
 NC="\033[0m"
@@ -16,7 +16,7 @@ log_info() {
 }
 
 log_error() {
-	echo -e "${R}[ERROR] $1${NC}\n"
+	echo -e "${R}[ERROR] $1 ${NC}\n"
 	# "resetting" devices to avoid flaky states
 	go_to_homescreen
 }
@@ -234,8 +234,8 @@ adb_check_callState() {
 }
 
 adb_grep_logcat() {
-
 	timeout=$(date +%s)
+	matches=1
 
 	# default or passed timeout
 	if [ ${3+z} ]; then
@@ -245,40 +245,15 @@ adb_grep_logcat() {
 		timeout=$((timeout+15))
 	fi
 
-	while [ "$(date +%s)" -lt "$timeout" ]; do
-		# -d is necessary, because otherwise adb does not terminate on its own.
-		adb -s "$1" logcat -d > "logcat_$1.txt"
-
-		if grep -E "$2" < logcat_$1.txt > /dev/null; then
-			echo "$(grep -E "$2" < logcat_$1.txt | wc -l)"
-			rm "logcat_$1.txt"
-			return 0;
-		fi
-
-	done
-
-	rm "logcat_$1.txt"
-	return 1
-}
-
-# TODO: get rid of this function and use only adb_grep_logcat!!!
-#				only needed for send_sms' sms request verification to CN. :/
-adb_grep_logcat_twice() {
-	timeout=$(date +%s)
-
-	# default or passed timeout
-	if [ ${3+z} ]; then
-		timeout=$((timeout+$3))
-	else
-		# (recommended) default timeout of 15 s
-		timeout=$((timeout+15))
+	if [ ${4+z} ]; then
+		matches="$4"
 	fi
 
 	while [ "$(date +%s)" -lt "$timeout" ]; do
 		# -d is necessary, because otherwise adb does not terminate on its own.
 		adb -s "$1" logcat -d > "logcat_$1.txt"
 
-		if [ $(grep -E "$2" < logcat_$1.txt | wc -l) -eq 2 ]; then
+		if [ "$(grep -E "$2" < logcat_$1.txt | wc -l)" -eq "$matches" ]; then
 			rm "logcat_$1.txt"
 			return 0;
 		fi
@@ -311,7 +286,7 @@ send_sms() {
 	fi
 
 	# verification that SMS request could be sent(?)
-	if adb_grep_logcat_twice "$1" ".*Mms.*onStart:.*mResultCode: -1 = Activity.RESULT_OK" > /dev/null; then
+	if adb_grep_logcat "$1" ".*Mms.*onStart:.*mResultCode: -1 = Activity.RESULT_OK" "15" "2" > /dev/null; then
 			log_info "$1 successfully sent SMS to CN"
 	else
 			log_error "TIMEOUT $1 SMS could not be send (yet) $2"
@@ -389,7 +364,7 @@ do_icall() {
 		echo -e "${B}[INPUT]${Y} enough of talking? ${NC}"
 		read
 
-		log_info "$1 ends call"
+		log_info "$1 ends call \n"
 		adb_keyevent "$1" "$KEYCODE_ENDCALL"
 	fi
 
@@ -400,18 +375,17 @@ do_icall() {
 # test wrapper for interactive mode
 generic_test() {
 	if [ $# -eq 3 ]; then
-		if [ "$1" = "d0" ]; then
-			$1 "$serial_0" "$msisdn_1" "$serial_1"
+		if [ "$2" = "d0" ]; then
+			"$1" "$serial_0" "$msisdn_1" "$serial_1"
 		else
-			$1 "$serial_1" "$msisdn_0" "$serial_0"
+			"$1" "$serial_1" "$msisdn_0" "$serial_0"
 		fi
 	else
-		$1 "$serial_0" "$msisdn_1" "$serial_1"
-		$1 "$serial_1" "$msisdn_0" "$serial_0"
+		"$1" "$serial_0" "$msisdn_1" "$serial_1"
+		"$1" "$serial_1" "$msisdn_0" "$serial_0"
 	fi
 }
 
-#
 sms() {
 	generic_test "send_sms" $@
 }
