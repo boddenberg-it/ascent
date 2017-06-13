@@ -53,11 +53,17 @@ After both adb connections have been successfully established (RSA handshake), y
 
 The following test cases and suites are available:
 
+* `./ascent.sh cs`
 * `./ascent.sh sms`
 * `./ascent.sh call`
+
+* `./ascent.sh ps`
 * `./ascent.sh data`
-* `/ascent.sh 2g`&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;(combines sms + call)
-* `/ascent.sh 3g`&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;(combines sms + call + data)
+* `./ascent.sh internet`
+
+* `/ascent.sh 2g`
+* `/ascent.sh 3g`
+* `/ascent.sh 4g`
 
 *Note: One can also pass config file:* `./ascent.sh -c 2g.cfg sms`
 
@@ -79,6 +85,8 @@ call d0 d1
 ```
 ![console output of 'call d0 d1'](https://boddenberg.it/ascent/call_d0_d1.png)
 
+*Note: old call() function still remains as "icall", so `icall d0 d1` will trigger an interactive call*
+
 ```
 sms d1 d0
 ```
@@ -88,6 +96,13 @@ sms d1 d0
 aping d0 heisec.de 5
 ```
 ![console output of 'ping d1 heisec.de 5'](https://boddenberg.it/ascent/aping_d0_heisec_5.png)
+
+All interactive test cases:
+
+* `sms d0 d1`              
+* `call d1 d0`
+* `icall d0 d1`
+* `aping d1 heisec.de`
 
 Furthermore functions are available to reset, unlock and debug phones via adb commands in case of a test failure:
 
