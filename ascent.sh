@@ -1,4 +1,4 @@
-diff#!/bin/bash
+#!/bin/bash
 
 ASCENT_VERSION="0.2"
 
@@ -114,11 +114,11 @@ sanity() {
 
 		missing=""
 
-		if [ -z ${serial_0+x} ]; then missing="$missing serial_0"; fi
-		if [ -z ${msisdn_0+x} ]; then missing="$missing msisdn_0"; fi
+		if [ -z "${serial_0+x}" ]; then missing="$missing serial_0"; fi
+		if [ -z "${msisdn_0+x}" ]; then missing="$missing msisdn_0"; fi
 
-		if [ -z ${serial_1+x} ]; then missing="$missing serial_1"; fi
-		if [ -z ${msisdn_1+x} ]; then missing="$missing msisdn_1"; fi
+		if [ -z "${serial_1+x}" ]; then missing="$missing serial_1"; fi
+		if [ -z "${msisdn_1+x}" ]; then missing="$missing msisdn_1"; fi
 
 		if [ ${#missing} -gt 0 ]; then
 			echo -e "${R}[ERROR] Config does not hold following information: $missing${NC}"
@@ -156,7 +156,8 @@ adb_shell() {
 	if [ $# -gt 1 ]; then
 		serial=$1
 		shift
-		adb -s "$serial" wait-for-device shell $@
+		# maybe this will break!
+		adb -s "$serial" wait-for-device shell "$@"
 	else
 		# interactive mode
 		adb -s "$1" wait-for-device shell
@@ -191,12 +192,12 @@ adb_call() {
 adb_ping() {
 
 	ping_count=3
-	if [ ! -z ${3+x} ]; then ping_count="$3"; fi
+	if [ ! -z "${3+x}" ]; then ping_count="$3"; fi
 	# freaky string, because two commands can only be passed to adb shell at
 	# once within single quotes, but passing URL and ping count is necessary.
-  adb_shell $1 'ping -c '"$ping_count"' '"$2"'; echo $?' > ascent_tmp
-	head -n -1 ascent_tmp
-	if [[ $(cat ascent_tmp | tail -1) != "0"* ]]; then return 1; fi
+  adb_shell "$1" 'ping -c '"$ping_count"' '"$2"'; echo $?' > ~/.ascent_tmp
+	head -n -1 ~/.ascent_tmp
+	if [[ $(tail -1 < ~/.ascent_tmp) != "0"* ]]; then return 1; fi
 }
 
 adb_swipe() {
@@ -219,14 +220,14 @@ adb_check_callState() {
 	timeout=$(date +%s)
 
 	# default or passed timeout
-	if [ ${3+z} ]; then
+	if [ "${3+z}" ]; then
 		timeout=$((timeout+$3))
 	else
 		timeout=$((timeout+25))
 	fi
 
 	while [ "$(date +%s)" -lt "$timeout" ]; do
-		call_state=$(adb_shell $1 dumpsys telephony.registry | grep "mCallState=$2")
+		call_state=$(adb_shell "$1" dumpsys telephony.registry | grep "mCallState=$2")
 		if [ ${#call_state} -gt 0 ]; then return 0; fi
 	done
 
@@ -235,29 +236,31 @@ adb_check_callState() {
 
 adb_grep_logcat() {
 	timeout=$(date +%s)
-	matches=1
 
 	# default or passed timeout
-	if [ ${3+z} ]; then
+	if [ "${3+z}" ]; then
 		timeout=$((timeout+$3))
 	else
-		# (recommended) default timeout of 15 s
+		# default timeout of 15 s
 		timeout=$((timeout+15))
-	fi
-
-	if [ ${4+z} ]; then
-		matches="$4"
 	fi
 
 	while [ "$(date +%s)" -lt "$timeout" ]; do
 		# -d is necessary, because otherwise adb does not terminate on its own.
 		adb -s "$1" logcat -d > "logcat_$1.txt"
 
-		if [ "$(grep -E "$2" < logcat_$1.txt | wc -l)" -eq "$matches" ]; then
-			rm "logcat_$1.txt"
-			return 0;
+		# precise amount of matches is passed
+		if [ "${4+z}" ]; then
+			if [ "$(grep -c "$2" < "logcat_$1.txt")" -eq "$4" ]; then
+				rm "logcat_$1.txt"
+				return 0;
+			fi
+		else
+			if grep -E "$2" < "logcat_$1.txt" > /dev/null; then
+				rm "logcat_$1.txt"
+				return 0;
+			fi
 		fi
-
 	done
 
 	rm "logcat_$1.txt"
@@ -371,8 +374,6 @@ do_icall() {
 	go_to_homescreen
 }
 
-
-# test wrapper for interactive mode
 generic_test() {
 	if [ $# -eq 3 ]; then
 		if [ "$2" = "d0" ]; then
@@ -387,22 +388,22 @@ generic_test() {
 }
 
 sms() {
-	generic_test "send_sms" $@
+	generic_test "send_sms" "$@"
 }
 
 call() {
-	generic_test "do_call" $@
+	generic_test "do_call" "$@"
 }
 
 icall() {
-	generic_test "do_icall" $@
+	generic_test "do_icall" "$@"
 }
 
 data() {
 	apn_ip="$(adb1 'ip a | grep global' | cut -d ' ' -f6 | cut -d '.' -f1,2,3)"
 
-	test_ping "$serial_0" "${apn_ip}.1"
-	test_ping "$serial_1" "${apn_ip}.1"
+	test_ping "$serial_0" "${apn_ip}.1" "3" "DATA"
+	test_ping "$serial_1" "${apn_ip}.1" "3" "DATA"
 }
 
 internet() {
@@ -420,9 +421,15 @@ aping() {
 
 test_ping() {
 
-	init_test "DATA" "$1 tries to ping $2"
+	test_name="INTERNET"
 
-	adb_ping $@
+	if [ "${4+z}" ]; then
+		test_name="$4"
+	fi
+
+	init_test "$test_name" "$1 tries to ping $2"
+
+	adb_ping "$@"
 
 	if [ $? -eq 0 ]; then
 		test_success "DATA"
@@ -450,11 +457,11 @@ ps() {
 	ps
 }
 
-4G() {
-	3G
+4g() {
+	3g
 }
 
-# to provide help in interactive mode
+# INTERACTIVE MODE functions
 help() {
 	print_help
 }
