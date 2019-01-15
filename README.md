@@ -1,4 +1,4 @@
-# **A**ndroid **S**emiautomated **CE**lullar **N**etwork **T**esting
+# **A**ndroid **S**emiautomated **CE**llular **N**etwork **T**esting
 
 ### Why?
 
